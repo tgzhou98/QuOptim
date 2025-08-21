@@ -50,10 +50,22 @@ class MultiprocessEnv:
     def work(env, rank: int, worker_end: Connection, device: str, event, **kwargs):
         """The function that each worker runs. Each worker receives (from the engine) a command and arguments, that it executes in its copy `env` of the environment and then sends the results to the engine"""
         if device == 'cuda':
-            print(torch.cuda.device_count(), "this much devices available", flush=True)
-            # torch.cuda.set_device(1 + rank%(torch.cuda.device_count()-1))
-            torch.cuda.set_device(rank%(torch.cuda.device_count())) # if only one device available
-        print(f'Thread {rank} STARTED on {torch.cuda.current_device() if device == "cuda" else "cpu"}', flush=True)
+            try:
+                if torch.cuda.is_available():
+                    device_count = torch.cuda.device_count()
+                    print(device_count, "CUDA devices available", flush=True)
+                    # torch.cuda.set_device(1 + rank%(device_count-1))
+                    torch.cuda.set_device(rank % device_count) # if only one device available
+                    current_device = torch.cuda.current_device()
+                    print(f'Thread {rank} STARTED on CUDA device {current_device}', flush=True)
+                else:
+                    print(f'Thread {rank} CUDA not available, falling back to CPU', flush=True)
+                    device = 'cpu'
+            except Exception as e:
+                print(f'Thread {rank} CUDA setup failed ({e}), falling back to CPU', flush=True)
+                device = 'cpu'
+        else:
+            print(f'Thread {rank} STARTED on CPU', flush=True)
         
         while True:
             event.wait()

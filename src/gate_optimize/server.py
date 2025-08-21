@@ -175,7 +175,7 @@ async def generate_circuit_from_stabilizers(
             utils._globals['rewardtype'] = 'fidelity'
             utils._globals['debug'] = False
             utils._globals['dist'] = 'clifford'
-            utils._globals['device'] = 'cpu'
+            utils._globals['device'] = utils.get_device(prefer_cuda=True)
             utils._globals['bufsize'] = 1000
             utils._globals['gamma'] = 0.99
             utils._globals['tau'] = 0.005

@@ -156,7 +156,7 @@ class Runner:
         utils._globals['dist'] = self.args.dist
         utils._globals['rewardtype'] = self.args.rewardtype
         utils._globals['swanlab'] = self.args.swanlab
-        utils._globals['device'] = 'cuda' if torch.cuda.is_available() else 'cpu'
+        utils._globals['device'] = utils.get_device(prefer_cuda=True)
         utils._globals['noise'] = (lambda state: state) if abs(self.args.noise) < 1e-6 else partial(utils.dephasing_noise, prob=self.args.noise)
         utils._globals['bufsize'] = args.bufsize
         utils._globals['gamma'] = args.gamma

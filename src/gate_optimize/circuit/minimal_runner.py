@@ -19,25 +19,28 @@ import time
 from pathlib import Path
 from importlib import resources
 
-# Handle both direct execution and module execution
-if __name__ == '__main__' and __package__ is None:
-    # Direct execution - add parent directories to path
-    try:
-        project_root = resources.files('gate_optimize').parent.parent
-    except (ImportError, AttributeError):
-        # Fallback for older Python or if resources fails
-        project_root = Path(__file__).resolve().parent.parent.parent.parent
-    sys.path.insert(0, str(project_root / 'src'))
-    from gate_optimize.circuit.environment import Environment
-    from gate_optimize.circuit.experiment import Experiment
-    from gate_optimize.circuit import utils
-    from gate_optimize.circuit.runner import parse
-else:
-    # Module execution
+# Clean module import handling
+try:
+    # Try relative imports first (module execution)
     from .environment import Environment
     from .experiment import Experiment
     from . import utils
     from .runner import parse
+except ImportError:
+    # Fallback to absolute imports (direct execution)
+    # Set up path only if needed
+    if 'gate_optimize' not in sys.modules:
+        try:
+            project_root = resources.files('gate_optimize').parent.parent
+        except (ImportError, AttributeError):
+            # Fallback for older Python or if resources fails
+            project_root = Path(__file__).resolve().parent.parent.parent.parent
+        sys.path.insert(0, str(project_root / 'src'))
+    
+    from gate_optimize.circuit.environment import Environment
+    from gate_optimize.circuit.experiment import Experiment
+    from gate_optimize.circuit import utils
+    from gate_optimize.circuit.runner import parse
 
 from qiskit import QuantumCircuit
 import qiskit.quantum_info as qi
@@ -219,7 +222,7 @@ def run_minimal_circuit_generation():
             'dist': args.dist,
             'rewardtype': args.rewardtype,
             'swanlab': False,
-            'device': 'cuda' if torch.cuda.is_available() else 'cpu',
+            'device': utils.get_device(prefer_cuda=True),
             'noise': lambda state: state,
             'bufsize': args.bufsize,
             'gamma': args.gamma,

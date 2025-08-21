@@ -22,14 +22,45 @@ args = None
 
 BEEP = lambda msg: os.system(f'say "{msg}"') # tested only on macOS
 
+def get_device(prefer_cuda=True):
+	"""
+	Get the best available device with CUDA fallback to CPU.
+	
+	Args:
+		prefer_cuda (bool): Whether to prefer CUDA if available
+		
+	Returns:
+		str: 'cuda' if CUDA is available and working, 'cpu' otherwise
+	"""
+	if not prefer_cuda:
+		return 'cpu'
+		
+	try:
+		if torch.cuda.is_available():
+			# Test CUDA functionality
+			test_tensor = torch.tensor([1.0], device='cuda')
+			test_result = test_tensor + 1.0
+			del test_tensor, test_result
+			torch.cuda.empty_cache()
+			return 'cuda'
+	except Exception as e:
+		print(f"CUDA test failed, falling back to CPU: {e}")
+		
+	return 'cpu'
+
 # set seed
 def set_seed(seed: int):
 	gc.collect()
-	torch.cuda.empty_cache()
+	try:
+		torch.cuda.empty_cache()
+		torch.cuda.manual_seed(seed)
+	except RuntimeError:
+		# CUDA not available, skip CUDA-specific operations
+		pass
+	
 	random.seed(seed)
 	os.environ['PYTHONHASHSEED'] = str(seed)
 	torch.manual_seed(seed)
-	torch.cuda.manual_seed(seed)
 	torch.backends.cudnn.deterministic = True
 	torch.backends.cudnn.benchmark = False
 

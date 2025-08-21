@@ -8,6 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+venv
 
 # PNG files in model directory
 model/**/*.png

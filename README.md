@@ -52,6 +52,6 @@ Some simple test
 `python -m gate_optimize.pulse.optimize_cz`
 
 - Optimize the X gate
-`python -m gate_optimize.pulse.optimize_X`
+`python -m gate_optimize.pulse.optimize_x`
 
 
