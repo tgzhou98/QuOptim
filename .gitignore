@@ -15,3 +15,10 @@ model/**/*.png
 
 # PNG files in source directory
 src/**/*.png
+
+# log files
+*.log
+
+# macOS system files
+.DS_Store
+**/.DS_Store

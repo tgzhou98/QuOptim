@@ -139,7 +139,7 @@ async def optimize_x_gate(
 async def generate_circuit_from_stabilizers(
     stabilizers: Annotated[List[str], "List of stabilizer strings for the quantum error correction code (e.g., ['+ZZ_____', '+_ZZ____', '+XXXXXXX'] for 7-qubit Steane code)"],
     num_circuits: Annotated[int, "Number of different circuit optimizations to generate"] = 5,
-) -> list[TextContent]:
+) -> list[ImageContent | TextContent]:
     """
     Generate optimized quantum circuits from stabilizer generator strings.
     
@@ -148,7 +148,7 @@ async def generate_circuit_from_stabilizers(
         num_circuits: Number of different circuit variants to generate
         
     Returns:
-        Text content containing circuit diagrams, gate counts, and fidelities
+        List containing text content with circuit information and PNG images of circuit diagrams
     """
     try:
         # Validate stabilizers format
@@ -215,6 +215,7 @@ async def generate_circuit_from_stabilizers(
             
             # Generate circuits using the target tableau
             results = []
+            images = []  # Store images separately
             results.append(f"QUANTUM CIRCUIT GENERATION FROM STABILIZERS")
             results.append("=" * 60)
             results.append(f"Input Stabilizers: {stabilizers}")
@@ -324,9 +325,29 @@ async def generate_circuit_from_stabilizers(
                         
                         results.append(f"RL Fidelity: {final_fidelity:.6f}")
                         results.append("RL Circuit Diagram:")
-                        results.append(str(qc.draw('text', fold=-1)))  # Convert to string
+                        results.append(str(qc.draw('text', fold=80)))  # Convert to string
                         results.append(f"RL Gate Array: {gate_names}")
                         results.append(f"RL Gate Count: {len(qc.data)}")
+                        
+                        # Generate PNG diagram for RL circuit
+                        try:
+                            plt.close('all')
+                            fig, ax = plt.subplots(figsize=(12, 6))
+                            qc.draw('mpl', ax=ax)
+                            ax.set_title(f"RL Circuit Variant {circuit_num + 1} - Fidelity: {final_fidelity:.6f}, Gate Count = {len(qc.data)}")
+                            
+                            import io
+                            img_buffer = io.BytesIO()
+                            fig.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+                            img_buffer.seek(0)
+                            img_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+                            img_buffer.close()
+                            plt.close(fig)
+                            
+                            # Store image data for later inclusion in results
+                            images.append(ImageContent(type="image", data=img_base64, mimeType="image/png"))
+                        except Exception as img_e:
+                            results.append(f"Note: Could not generate PNG diagram: {img_e}")
                         
                     except Exception as e:
                         results.append(f"Error generating circuit diagram: {e}")
@@ -340,13 +361,25 @@ async def generate_circuit_from_stabilizers(
                     
                     results.append(f"\n--- QISKIT BENCHMARKS ---")
                     
-                    # Convert to Qiskit format
+                    # Convert to Qiskit format - ensure consistent lengths
                     stabilizer_strings = [s.lstrip('+-').replace('_', 'I') for s in stabilizers]
-                    cliff = qi.StabilizerState.from_stabilizer_list(stabilizer_strings, allow_underconstrained=True).clifford
+                    
+                    # Ensure all stabilizer strings have the same length as num_qubits
+                    max_length = max(len(s) for s in stabilizer_strings)
+                    actual_num_qubits = max(num_qubits, max_length)
+                    
+                    # Pad shorter stabilizers with identity operators
+                    padded_stabilizers = []
+                    for s in stabilizer_strings:
+                        if len(s) < actual_num_qubits:
+                            s = s + 'I' * (actual_num_qubits - len(s))
+                        padded_stabilizers.append(s)
+                    
+                    cliff = qi.StabilizerState.from_stabilizer_list(padded_stabilizers, allow_underconstrained=True).clifford
                     
                     # Get benchmark circuits
                     benchmarks = {
-                        'bravyi': qi.StabilizerState.from_stabilizer_list(stabilizer_strings, allow_underconstrained=True).clifford.to_circuit(),
+                        'bravyi': qi.StabilizerState.from_stabilizer_list(padded_stabilizers, allow_underconstrained=True).clifford.to_circuit(),
                         'ag': qs.synth_clifford_ag(cliff),
                         'bm': qs.synth_clifford_full(cliff),
                         'greedy': qs.synth_clifford_greedy(cliff)
@@ -357,7 +390,27 @@ async def generate_circuit_from_stabilizers(
                         results.append(f"Gate Count: {len(benchmark_qc.data)}")
                         if len(benchmark_qc.data) < 30:  # Only show diagram for small circuits
                             results.append("Circuit Diagram:")
-                            results.append(str(benchmark_qc.draw('text', fold=-1)))
+                            results.append(str(benchmark_qc.draw('text', fold=80)))
+                            
+                            # Generate PNG diagram for benchmark circuit
+                            try:
+                                plt.close('all')
+                                fig, ax = plt.subplots(figsize=(12, 6))
+                                benchmark_qc.draw('mpl', ax=ax)
+                                ax.set_title(f"{method_name.upper()} Circuit - Gate Count: {len(benchmark_qc.data)}")
+                                
+                                import io
+                                img_buffer = io.BytesIO()
+                                fig.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+                                img_buffer.seek(0)
+                                img_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+                                img_buffer.close()
+                                plt.close(fig)
+                                
+                                # Store image data for later inclusion in results
+                                images.append(ImageContent(type="image", data=img_base64, mimeType="image/png"))
+                            except Exception as img_e:
+                                results.append(f"Note: Could not generate PNG diagram: {img_e}")
                         
                 except Exception as e:
                     results.append(f"Error generating Qiskit benchmarks: {e}")
@@ -370,7 +423,14 @@ async def generate_circuit_from_stabilizers(
         except Exception as e:
             return [TextContent(type="text", text=f"Error during circuit generation: {e}")]
         
-        return [TextContent(type="text", text="\n".join(results))]
+        # Combine text and image results
+        content_list = [TextContent(type="text", text="\n".join(results))]
+        
+        # Add circuit diagram images if they were generated
+        if images:
+            content_list.extend(images)
+            
+        return content_list
         
     except Exception as e:
         return [TextContent(type="text", text=f"Unexpected error: {e}")]
