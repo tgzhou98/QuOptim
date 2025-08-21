@@ -86,7 +86,7 @@ def print_rl_circuit(actions, env, fidelity, target_tableau):
         from qiskit import QuantumCircuit
         qc = QuantumCircuit(env.qubits)
         
-        for action in actions:
+        for action in reversed(actions):
             action_idx = action.item() if hasattr(action, 'item') else action
             if action_idx < len(env.gates):
                 gate_name = env.gates[action_idx]

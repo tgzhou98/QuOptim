@@ -251,14 +251,15 @@ class Experiment:
                 torch.save(self.agent.value_model.state_dict(), f)
 
     def load_model(self, filename):
+        
         with open(f'{filename}.pkl', 'rb') as f:
             if self.algorithm in ['ppo', 'vpg']: 
-                self.agent.policy_model.load_state_dict(torch.load(f))
+                self.agent.policy_model.load_state_dict(torch.load(f, map_location=torch.device('cpu')))
             elif self.algorithm in ['dqn', 'ddqn']:
-                self.agent.online_model.load_state_dict(torch.load(f))
+                self.agent.online_model.load_state_dict(torch.load(f, map_location=torch.device('cpu')))
         if self.algorithm in ['vpg', 'ppo']:
             with open(f'{filename}_value.pkl', 'rb') as f:
-                self.agent.value_model.load_state_dict(torch.load(f))
+                self.agent.value_model.load_state_dict(torch.load(f, map_location=torch.device('cpu')))
 
     def close(self):
         if hasattr(self, 'env'): self.env.close()
