@@ -217,7 +217,7 @@ class Environment:
 					targets.append([i, j])
 					basic_gate_count.append(1)
 
-		return gates, ckts, targets, [], basic_gate_count
+		return gates, ckts, targets, inv_gates, basic_gate_count
 	
 	def step(self, action: list[int]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, Any]:
 		self.steps_left -= 1
@@ -416,7 +416,7 @@ class Environment:
 	
 	def get_inverted_ckt(self, actions: list[int]):
 		ckt = QuantumCircuit(self.qubits)
-		for action in actions:
+		for action in reversed(actions):
 			ckt.compose(self.inv_qiskit_ckts[action], range(self.qubits), inplace=True)
 		return ckt
 	

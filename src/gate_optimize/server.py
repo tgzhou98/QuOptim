@@ -16,6 +16,8 @@ from matplotlib import pyplot as plt
 import stim
 import tempfile
 import os
+import torch
+
 
 mcp = FastMCP("mcp-gate-optimize")
 
@@ -40,21 +42,29 @@ async def optimize_cz_gate(
     """
     g = GRAPE_CZ()
     infid = []
-    fig = plt.figure(0)
     for i in range(iterations):
         fidelity = g.iteration_onestep(learning_rate)
         infid.append(abs(1 - fidelity))
 
-    plt.clf()
+    # Create a fresh figure to avoid overlapping
+    plt.close('all')  # Close any existing figures
+    fig, ax = plt.subplots(figsize=(10, 6))
     time_steps_stair0, pwc_pulse_stair0 = g.PWC_pulse(g.phi)
-    plt.plot(time_steps_stair0, pwc_pulse_stair0, "b-")
-    plt.xlabel("time")
-    plt.ylabel("pulse strength")
-    plt.title(f"CZ Gate Optimized Pulse, Fidelity: {fidelity:.4f}")
-    plt.ylim([0, 2 * np.pi])
+    ax.plot(time_steps_stair0, pwc_pulse_stair0, "b-", linewidth=2)
+    ax.set_xlabel("time")
+    ax.set_ylabel("pulse strength")
+    ax.set_title(f"CZ Gate Optimized Pulse, Fidelity: {fidelity:.4f}")
+    ax.set_ylim([0, 2 * np.pi])
+    ax.grid(True, alpha=0.3)
 
-    img_bytes = fig.to_image(format="png", scale=1)
-    img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+    # Convert figure to bytes
+    import io
+    img_buffer = io.BytesIO()
+    fig.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+    img_buffer.seek(0)
+    img_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+    img_buffer.close()
+    plt.close(fig)  # Clean up the figure
 
     return [
         ImageContent(type="image", data=img_base64, mimeType="image/png"),
@@ -86,7 +96,6 @@ async def optimize_x_gate(
         num_fourier_terms=fourier_terms,
     )
     avg_fidelities_history_opt = []
-    fig = plt.figure(0)
 
     for i in range(iterations):
         avg_fidelity_opt_grid, _ = g.iteration_onestep_numerical_derivative(
@@ -94,18 +103,28 @@ async def optimize_x_gate(
         )
         avg_fidelities_history_opt.append(avg_fidelity_opt_grid)
 
-    ax = fig.add_subplot(1, 1, 1)
+    # Create a fresh figure to avoid overlapping
+    plt.close('all')  # Close any existing figures
+    fig, ax = plt.subplots(figsize=(10, 6))
     t_plot_live = np.linspace(0, g.t_final, 400)
     phi_plot_live = g.reconstruct_phi_at_t(t_plot_live, g.a_coeffs, g.b_coeffs)
-    ax.plot(t_plot_live, phi_plot_live, "r-", label="Phase φ(t) (Fourier)")
+    ax.plot(t_plot_live, phi_plot_live, "r-", linewidth=2, label="Phase φ(t) (Fourier)")
+    ax.set_xlabel("time")
     ax.set_ylabel("Phase φ(t) (radians)", color="r")
     ax.tick_params(axis="y", labelcolor="r")
     ax.set_title(f"X Gate Optimized Pulse, Avg Fidelity: {g.fidelity:.4f}")
     ax.set_ylim([0, 2 * np.pi])
-    ax.grid(True)
+    ax.grid(True, alpha=0.3)
+    ax.legend()
 
-    img_bytes = fig.to_image(format="png", scale=1)
-    img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+    # Convert figure to bytes
+    import io
+    img_buffer = io.BytesIO()
+    fig.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+    img_buffer.seek(0)
+    img_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+    img_buffer.close()
+    plt.close(fig)  # Clean up the figure
 
     return [
         ImageContent(type="image", data=img_base64, mimeType="image/png"),
@@ -158,28 +177,38 @@ async def generate_circuit_from_stabilizers(
         
         # Setup environment and experiment for circuit generation
         try:
-            # Create temporary arguments object for circuit generation
-            class Args:
-                def __init__(self):
-                    self.qbits = num_qubits
-                    self.tol = 0.1
-                    self.name = 'stabilizer-circuit'
-                    self.exptdate = '20250820'
-                    self.seed = 42
-                    self.a = 'ppo'  # Use PPO algorithm
+            # Load parameters from the same JSON file that minimal_runner.py uses
+            from importlib import resources
+            try:
+                project_root = resources.files('gate_optimize').parent.parent
+            except (ImportError, AttributeError):
+                from pathlib import Path
+                project_root = Path(__file__).resolve().parent.parent.parent.parent
             
-            args = Args()
+            params_path = str(project_root / 'model' / 'eval' / '7bit_params.json')
+            
+            # Import the parse function to load parameters correctly
+            from .circuit.runner import parse
+            args = parse(['-fromjson', params_path])
+            
+            # Override specific values for our use case
+            args.qbits = num_qubits  # Use the actual number of qubits from stabilizers
             utils.set_seed(args.seed)
             
-            # Initialize utils globals required by Environment
-            utils._globals['rewardtype'] = 'fidelity'
-            utils._globals['debug'] = False
-            utils._globals['dist'] = 'clifford'
-            utils._globals['device'] = utils.get_device(prefer_cuda=True)
-            utils._globals['bufsize'] = 1000
-            utils._globals['gamma'] = 0.99
-            utils._globals['tau'] = 0.005
-            utils._globals['num_envs'] = 1
+            # Initialize utils globals required by Environment (matching minimal_runner.py)
+            utils._globals = {
+                'debug': False,
+                'dist': args.dist,
+                'rewardtype': args.rewardtype,
+                'swanlab': False,
+                'device': utils.get_device(prefer_cuda=True),
+                'noise': lambda state: state,
+                'bufsize': args.bufsize,
+                'gamma': args.gamma,
+                'tau': args.tau,
+                'num_envs': 1  # Override for single environment
+            }
+            utils.args = args
             
             # Initialize experiment
             exp = Experiment(args.a, training_req=False, n_workers=1)
@@ -191,93 +220,125 @@ async def generate_circuit_from_stabilizers(
             results.append(f"Input Stabilizers: {stabilizers}")
             results.append(f"Number of Qubits: {num_qubits}")
             results.append(f"Target Tableau Shape: {num_qubits} qubits")
+            results.append(f"Algorithm: {args.a}")
+            results.append(f"Gateset: {args.gateset}")
+            results.append(f"Max Steps: {args.maxsteps}")
             results.append("")
             
-            # Try to load existing model for circuit generation
-            from importlib import resources
-            try:
-                project_root = resources.files('gate_optimize').parent.parent
-            except (ImportError, AttributeError):
-                from pathlib import Path
-                project_root = Path(__file__).resolve().parent.parent.parent.parent
-            
-            model_dir = project_root / 'model' / 'plots' / f"{args.qbits}-{args.tol}-final-submission-nopenalty--08-09-2024"
+            # Construct model path using the correct format (matching minimal_runner.py)
+            model_dir = project_root / 'model' / 'plots' / f"{args.qbits}-{args.tol}-{args.name}--{args.exptdate}"
             model_path = str(model_dir / 'model')
             
-            if os.path.exists(model_path + '.pkl'):
-                try:
-                    exp.load_model(model_path)
-                    results.append("✓ Loaded pre-trained RL model")
-                except:
-                    results.append("⚠ Using random policy (no pre-trained model)")
+            # Check if model exists for loading later
+            model_exists = os.path.exists(model_path + '.pkl')
+            if model_exists:
+                results.append(f"✓ Found pre-trained model at {model_path}.pkl")
             else:
-                results.append("⚠ Using random policy (no pre-trained model found)")
+                results.append(f"⚠ No pre-trained model found at {model_path}.pkl")
             
-            # Generate multiple circuit variants
-            for circuit_num in range(min(num_circuits, 5)):  # Limit to 5 for performance
-                results.append(f"\n--- CIRCUIT VARIANT {circuit_num + 1} ---")
-                
-                # Create environment for this target
-                env = Environment(
-                    num_envs=1,
-                    target_state=target_tableau,
-                    fidelity_tol=args.tol,
-                    max_steps=50,
-                    gateset=['cnot', 'h', 's', 'sdg', 'x', 'y', 'z'],  # Standard gateset
-                    dist='clifford',  # Use valid distribution
-                    seed=args.seed
-                )
-                
-                # Generate circuit using RL agent
-                obs = env.reset()
-                actions = []
-                done = False
-                steps = 0
-                max_steps = 50  # Prevent infinite loops
-                
-                while not done and steps < max_steps:
-                    try:
-                        # Get action from model or random
-                        if hasattr(exp, 'policy') and exp.policy is not None:
-                            action = exp.get_action(obs, deterministic=True)
-                        else:
-                            action = np.random.choice(env.action_space)
-                        
-                        obs, reward, done, info = env.step(action)
-                        actions.append(action)
-                        steps += 1
-                        
-                        if done:
-                            break
-                            
-                    except Exception as e:
-                        results.append(f"Error during circuit generation: {e}")
-                        break
-                
-                # Get final fidelity and circuit
-                final_fidelity = env.curr_fidelity()[0]  # Get first environment's fidelity
-                
+            # Initialize test environment first (required for sample_env)
+            target_state = stim.Tableau(args.qbits)  # Start state
+            env = exp.initialize_test_env(target_state, target_tableau, args.tol, args.maxsteps, args.gateset, args.dist)
+            env.max_steps = int(1 * args.maxsteps)
+            
+            # Initialize agent and load model if available (matching minimal_runner.py)
+            model_loaded = False
+            if model_exists and not hasattr(exp, 'agent'):
                 try:
-                    # Generate circuit diagram
-                    qc = env.get_inverted_ckt(actions)
-                    gate_names = [env.gates[a] if isinstance(a, int) and a < len(env.gates) 
-                                else f"action_{a}" for a in actions]
+                    results.append("🔄 Initializing RL agent...")
+                    if args.a in ['ppo', 'vpg']:
+                        exp.initialize_agent_pg(
+                            policy_hidden=args.phidden,
+                            policy_activ_fn=getattr(torch.nn.functional, args.activfn),
+                            policy_model_max_grad_norm=0.5,
+                            policy_optimizer_fn=lambda net: torch.optim.Adam(net.parameters(), lr=args.plr),
+                            value_hidden=args.vhidden,
+                            value_activ_fn=getattr(torch.nn.functional, args.activfn),
+                            value_model_max_grad_norm=0.5,
+                            value_optimizer_fn=lambda net: torch.optim.Adam(net.parameters(), lr=args.vlr),
+                            entropy_loss_weight=args.entropywt,
+                            gamma=args.gamma,
+                        )
                     
-                    results.append(f"RL Fidelity: {final_fidelity:.6f}")
-                    results.append("RL Circuit Diagram:")
-                    results.append(str(qc.draw('text', fold=-1)))  # Convert to string
-                    results.append(f"RL Gate Array: {gate_names}")
-                    results.append(f"RL Gate Count: {len(qc.data)}")
-                    
+                    # Load the trained model
+                    results.append("🔄 Loading trained model...")
+                    exp.load_model(model_path)
+                    model_loaded = True
+                    results.append("✅ Successfully loaded pre-trained RL model!")
                 except Exception as e:
-                    results.append(f"Error generating circuit diagram: {e}")
-                    results.append(f"Actions taken: {actions}")
-                    results.append(f"Final fidelity: {final_fidelity:.6f}")
+                    results.append(f"❌ Model loading failed: {e}")
+                    results.append("⚠️ Will use random policy as fallback")
+            
+            # Generate multiple circuit variants using evaluate method (like minimal_runner.py)
+            results.append(f"\n🔄 Generating {min(num_circuits, 5)} circuit variants...")
+            try:
+                best_circuits, _ = exp.evaluate(env, n_eps=min(num_circuits, 5), num_best=min(num_circuits, 5), verbose=0)
                 
-                # Add Qiskit benchmarks for comparison
+                for circuit_num, (actions, _, _, final_fidelity) in enumerate(best_circuits):
+                    results.append(f"\n--- CIRCUIT VARIANT {circuit_num + 1} ---")
+                    
+                    try:
+                        # Convert actions to integers if needed
+                        int_actions = [a.item() if hasattr(a, 'item') else int(a) for a in actions]
+                        
+                        # Try to generate circuit diagram using environment method
+                        try:
+                            qc = env.get_inverted_ckt(int_actions)
+                        except (IndexError, AttributeError):
+                            # Fallback: build circuit manually (like minimal_runner.py)
+                            from qiskit import QuantumCircuit
+                            qc = QuantumCircuit(env.qubits)
+                            
+                            for action in reversed(int_actions):
+                                if action < len(env.gates):
+                                    gate_name = env.gates[action]
+                                    # Parse gate name and apply to circuit
+                                    if gate_name.startswith('h('):
+                                        qubit = int(gate_name.split('(')[1].split(')')[0])
+                                        qc.h(qubit)
+                                    elif gate_name.startswith('cnot('):
+                                        qubits = gate_name.split('(')[1].split(')')[0].split(',')
+                                        qc.cx(int(qubits[0]), int(qubits[1]))
+                                    elif gate_name.startswith('s('):
+                                        qubit = int(gate_name.split('(')[1].split(')')[0])
+                                        qc.s(qubit)
+                                    elif gate_name.startswith('sdg('):
+                                        qubit = int(gate_name.split('(')[1].split(')')[0])
+                                        qc.sdg(qubit)
+                                    elif gate_name.startswith('hsdgh('):
+                                        qubit = int(gate_name.split('(')[1].split(')')[0])
+                                        qc.h(qubit)
+                                        qc.sdg(qubit)
+                                        qc.h(qubit)
+                                    elif gate_name.startswith('x('):
+                                        qubit = int(gate_name.split('(')[1].split(')')[0])
+                                        qc.x(qubit)
+                                    elif gate_name.startswith('y('):
+                                        qubit = int(gate_name.split('(')[1].split(')')[0])
+                                        qc.y(qubit)
+                                    elif gate_name.startswith('z('):
+                                        qubit = int(gate_name.split('(')[1].split(')')[0])
+                                        qc.z(qubit)
+                        
+                        gate_names = [env.gates[a] for a in int_actions if a < len(env.gates)]
+                        
+                        results.append(f"RL Fidelity: {final_fidelity:.6f}")
+                        results.append("RL Circuit Diagram:")
+                        results.append(str(qc.draw('text', fold=-1)))  # Convert to string
+                        results.append(f"RL Gate Array: {gate_names}")
+                        results.append(f"RL Gate Count: {len(qc.data)}")
+                        
+                    except Exception as e:
+                        results.append(f"Error generating circuit diagram: {e}")
+                        results.append(f"Actions taken: {actions}")
+                        results.append(f"Final fidelity: {final_fidelity:.6f}")
+                
+                # Add Qiskit benchmarks for comparison (only once, not per circuit)
                 try:
                     import qiskit.quantum_info as qi
                     import qiskit.synthesis as qs
+                    
+                    results.append(f"\n--- QISKIT BENCHMARKS ---")
                     
                     # Convert to Qiskit format
                     stabilizer_strings = [s.lstrip('+-').replace('_', 'I') for s in stabilizers]
@@ -291,7 +352,6 @@ async def generate_circuit_from_stabilizers(
                         'greedy': qs.synth_clifford_greedy(cliff)
                     }
                     
-                    results.append(f"\n--- QISKIT BENCHMARKS ---")
                     for method_name, benchmark_qc in benchmarks.items():
                         results.append(f"\n{method_name.upper()} Circuit:")
                         results.append(f"Gate Count: {len(benchmark_qc.data)}")
@@ -301,6 +361,9 @@ async def generate_circuit_from_stabilizers(
                         
                 except Exception as e:
                     results.append(f"Error generating Qiskit benchmarks: {e}")
+                    
+            except Exception as e:
+                results.append(f"Error during circuit evaluation: {e}")
             
             results.append(f"\n{'=' * 60}")
             
@@ -313,34 +376,4 @@ async def generate_circuit_from_stabilizers(
         return [TextContent(type="text", text=f"Unexpected error: {e}")]
 
 
-@mcp.tool(
-    name="generate_steane_code_circuits",
-    description="Generate circuits for the 7-qubit Steane quantum error correction code using pre-defined stabilizers.",
-)
-async def generate_steane_code_circuits(
-    num_variants: Annotated[int, "Number of circuit variants to generate"] = 3,
-) -> list[TextContent]:
-    """
-    Generate optimized quantum circuits for the 7-qubit Steane code.
-    
-    Args:
-        num_variants: Number of different circuit optimizations to generate
-        
-    Returns:
-        Text content containing circuit diagrams, gate counts, and fidelities
-    """
-    # 7-qubit Steane code stabilizers
-    steane_stabilizers = [
-        '+ZZ_____',
-        '+_ZZ____', 
-        '+__ZZ___',
-        '+___ZZ__',
-        '+____ZZ_',
-        '+_____ZZ',
-        '+XXXXXXX'
-    ]
-    
-    return await generate_circuit_from_stabilizers(steane_stabilizers, num_variants)
 
-
-# main = mcp.app
