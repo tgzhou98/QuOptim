@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
+    # app = QApplication(sys.argv)
+    # window = MainWindow()
+    # window.show()
+    # sys.exit(app.exec())
 
     # logger.info("starting gpaw computation server...")
     mcp.run(transport="stdio")
