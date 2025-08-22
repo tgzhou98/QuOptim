@@ -29,6 +29,8 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
       #  Install project dependencies with pytest and run tests
       - name: Install dependencies
         run: uv sync --group dev
