@@ -14,10 +14,13 @@ from .circuit.experiment import Experiment
 from .circuit import utils
 import numpy as np
 from matplotlib import pyplot as plt
+
 import stim
 import tempfile
 import os
 import torch
+import io
+import base64
 
 
 mcp = FastMCP("mcp-gate-optimize")
@@ -273,12 +276,12 @@ async def generate_circuit_from_stabilizers(
             results.append(f"RL Gate Array: {gate_names}")
             results.append(f"RL Gate Count: {len(qc.data)}")
             
+            # Generate circuit diagram
             plt.close('all')
             fig, ax = plt.subplots(figsize=(12, 6))
             qc.draw('mpl', ax=ax)
             ax.set_title(f"RL Circuit Variant {circuit_num + 1} - Fidelity: {final_fidelity:.6f}, Gate Count = {len(qc.data)}")
             
-            import io
             img_buffer = io.BytesIO()
             fig.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
             img_buffer.seek(0)
@@ -286,6 +289,15 @@ async def generate_circuit_from_stabilizers(
             img_buffer.close()
             plt.close(fig)
             images.append(ImageContent(type="image", data=img_base64, mimeType="image/png"))
+            
+            # Generate timeline plot
+            try:
+                from .circuit.utils import plot_timeline
+                timeline_img_base64 = plot_timeline(int_actions, env)
+                images.append(ImageContent(type="image", data=timeline_img_base64, mimeType="image/png"))
+                results.append("✅ Generated execution timeline visualization")
+            except Exception as timeline_error:
+                results.append(f"⚠ Timeline generation error: {timeline_error}")
 
         except Exception as e:
             results.append(f"Error during circuit processing for variant {circuit_num + 1}: {e}")
