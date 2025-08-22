@@ -12,7 +12,7 @@ venv
 
 # PNG files in model directory
 model/**/*.png
-
+*.png
 # PNG files in source directory
 src/**/*.png
 
@@ -22,3 +22,5 @@ src/**/*.png
 # macOS system files
 .DS_Store
 **/.DS_Store
+
+run_server.py
