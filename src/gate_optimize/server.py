@@ -20,6 +20,7 @@ import stim
 import tempfile
 import os
 import torch
+import base64
 
 
 mcp = FastMCP("mcp-gate-optimize")
@@ -850,7 +851,18 @@ async def generate_circuit_from_stabilizers(
             img_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
             img_buffer.close()
             plt.close(fig)
+            images.append(ImageContent(type="image", data=img_base64, mimeType="image/png"))
             
+            # Generate timeline plot
+            try:
+                from .circuit.utils import plot_timeline
+                timeline_img_base64 = plot_timeline(int_actions, env)
+                images.append(ImageContent(type="image", data=timeline_img_base64, mimeType="image/png"))
+                results.append("✅ Generated execution timeline visualization")
+            except Exception as timeline_error:
+                results.append(f"⚠ Timeline generation error: {timeline_error}")
+
+  
             # Store image data for later inclusion in results
             images.append(ImageContent(type="image", data=img_base64, mimeType="image/png"))
         
