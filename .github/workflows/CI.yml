@@ -38,6 +38,7 @@ jobs:
           python -m pip install pytest
           uv sync
           uv pip list
+          python -c "import PyQt6; print(PyQt6.__version__)"
 
       #  `-rs` flag is used to debug for the test failure
       - name: Run test
