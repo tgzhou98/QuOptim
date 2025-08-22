@@ -1,7 +1,21 @@
 import base64
 from typing import Annotated, Literal, List
-import requests
 import json
+
+# Try to import requests, but don't fail if it's not available
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+    # Create dummy requests module for when it's not available
+    class DummyRequests:
+        def post(self, *args, **kwargs):
+            pass
+        class exceptions:
+            class RequestException(Exception):
+                pass
+    requests = DummyRequests()
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ImageContent, TextContent
@@ -29,6 +43,9 @@ GUI_ENDPOINT = "http://127.0.0.1:12345/update"
 
 def send_to_gui(**kwargs):
     """一个辅助函数，用于将结构化数据发送到自定义GUI"""
+    if not REQUESTS_AVAILABLE:
+        return  # Skip if requests is not available
+    
     try:
         kwargs.setdefault("status", "finished")
         requests.post(GUI_ENDPOINT, json=kwargs, timeout=2)

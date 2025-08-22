@@ -32,7 +32,8 @@ src_path = project_root / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
-from gate_optimize.server import mcp
+# Don't import server at module level to avoid circular imports
+# The server will be imported when needed
 import logging
 
 # Set up logging (this just prints messages to your terminal for debugging)
@@ -47,6 +48,7 @@ def run_mcp_server():
     """Run MCP server in a separate thread"""
     try:
         logger.info("Starting MCP server...")
+        from gate_optimize.server import mcp
         asyncio.run(mcp.run_stdio_async())
     except Exception as e:
         logger.error(f"MCP server error: {e}")
