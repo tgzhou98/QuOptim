@@ -37,6 +37,11 @@ jobs:
           uv sync
           uv pip list
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0
+
       #  `-rs` flag is used to debug for the test failure
       - name: Run test
         run: uv run python -m pytest tests/ -v
