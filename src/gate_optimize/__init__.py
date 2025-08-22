@@ -2,7 +2,26 @@ import sys
 import os
 from pathlib import Path
 from importlib import resources
-from .custom_gui import *
+
+# Try to import PyQt6-dependent modules, but don't fail if they're not available
+try:
+    from .custom_gui import *
+    PYQT6_AVAILABLE = True
+except ImportError:
+    # PyQt6 not available (e.g., in CI environment)
+    PYQT6_AVAILABLE = False
+    # Create dummy classes for when GUI is not available
+    class QApplication:
+        def __init__(self, *args, **kwargs):
+            pass
+        def exec(self):
+            pass
+    
+    class MainWindow:
+        def __init__(self):
+            pass
+        def show(self):
+            pass
 
 # Add src directory to Python path for proper module imports
 import gate_optimize
@@ -23,10 +42,15 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
+    if PYQT6_AVAILABLE:
+        app = QApplication(sys.argv)
+        window = MainWindow()
+        window.show()
+        sys.exit(app.exec())
+    else:
+        # Fallback when GUI is not available
+        logger.info("GUI not available, starting MCP server directly...")
+        mcp.run(transport="stdio")
 
     # logger.info("starting gpaw computation server...")
     mcp.run(transport="stdio")
