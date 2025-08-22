@@ -851,6 +851,8 @@ async def generate_circuit_from_stabilizers(
             img_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
             img_buffer.close()
             plt.close(fig)
+            
+            # Store image data for later inclusion in results
             images.append(ImageContent(type="image", data=img_base64, mimeType="image/png"))
             
             # Generate timeline plot
