@@ -33,7 +33,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
       #  Install project dependencies with pytest and run tests
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync
 
 
       #  `-rs` flag is used to debug for the test failure
