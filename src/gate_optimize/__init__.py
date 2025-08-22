@@ -1,5 +1,7 @@
 import sys
 import os
+import asyncio
+import threading
 from pathlib import Path
 from importlib import resources
 from .custom_gui import *
@@ -22,14 +24,29 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
-    # app = QApplication(sys.argv)
-    # window = MainWindow()
-    # window.show()
-    # sys.exit(app.exec())
+def run_mcp_server():
+    """Run MCP server in a separate thread"""
+    try:
+        logger.info("Starting MCP server...")
+        asyncio.run(mcp.run_stdio_async())
+    except Exception as e:
+        logger.error(f"MCP server error: {e}")
 
-    # logger.info("starting gpaw computation server...")
-    mcp.run(transport="stdio")
+
+def main() -> None:
+    """Main entry point that runs both GUI and MCP server"""
+    # Start MCP server in a separate thread
+    mcp_thread = threading.Thread(target=run_mcp_server, daemon=True)
+    mcp_thread.start()
+    logger.info("MCP server started in background thread")
+    
+    # Start Qt application
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    
+    logger.info("Starting GUI application...")
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
