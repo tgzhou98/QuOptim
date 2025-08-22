@@ -22,7 +22,7 @@ class TestGateOptimization:
     @pytest.mark.asyncio
     async def test_optimize_cz_gate_basic(self):
         """Test basic CZ gate optimization functionality."""
-        result = await optimize_cz_gate(iterations=10, learning_rate=0.3, pulse_time=3.0, time_steps=20)
+        result = await optimize_cz_gate(iterations=10, learning_rate=0.3, time_steps=20)
         
         assert isinstance(result, list)
         assert len(result) == 2  # Should return image and text
@@ -47,18 +47,16 @@ class TestGateOptimization:
         result = await optimize_cz_gate(
             iterations=15,
             learning_rate=0.5,
-            pulse_time=5.0,
-            omega_max=1.2,
             time_steps=30
         )
         
         assert isinstance(result, list)
         text_content = next(item for item in result if isinstance(item, TextContent))
         
-        # Check parameter reporting
-        assert "Total time: 5.000" in text_content.text
+        # Check parameter reporting (now using defaults set inside function)
+        assert "Total time: 7.600" in text_content.text  # Default pulse_time = 7.6
         assert "Time steps: 30" in text_content.text
-        assert "Omega_max: 1.2" in text_content.text
+        assert "Omega_max: 1" in text_content.text  # Default omega_max = 1.0
         assert "Learning rate: 0.5" in text_content.text
         assert "Iterations: 15" in text_content.text
     
@@ -91,21 +89,17 @@ class TestGateOptimization:
         result = await optimize_x_gate(
             iterations=12,
             learning_rate=0.08,
-            fourier_terms=4,
-            pulse_time=3.0,
-            omega_max=0.8,
-            rise_fall_ratio=0.05,
-            optimize_sine_terms=True
+            fourier_terms=4
         )
         
         assert isinstance(result, list)
         text_content = next(item for item in result if isinstance(item, TextContent))
         
-        # Check parameter reporting
-        assert "Total time: 9.425" in text_content.text  # π × 3.0
+        # Check parameter reporting (now using defaults set inside function)
+        assert "Total time: 7.854" in text_content.text  # π × 2.5 (default pulse_time)
         assert "Fourier terms: 4" in text_content.text
         assert "Rise/fall times:" in text_content.text
-        assert "Optimize sine terms: True" in text_content.text
+        assert "Optimize sine terms: False" in text_content.text  # Default value
         assert "Learning rate: 0.08" in text_content.text
         assert "Iterations: 12" in text_content.text
     

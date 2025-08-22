@@ -2,6 +2,7 @@ import sys
 import os
 from pathlib import Path
 from importlib import resources
+from .custom_gui import *
 
 # Add src directory to Python path for proper module imports
 import gate_optimize
@@ -22,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
+
     # logger.info("starting gpaw computation server...")
     mcp.run(transport="stdio")
 
