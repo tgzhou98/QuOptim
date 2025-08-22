@@ -37,6 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pytest
           uv sync
+          uv pip list
 
       #  `-rs` flag is used to debug for the test failure
       - name: Run test
