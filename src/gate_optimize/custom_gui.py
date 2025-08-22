@@ -3,7 +3,7 @@ import base64
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QLabel, QTextEdit, QVBoxLayout, 
                              QWidget, QScrollArea, QSplitter, QFormLayout, QFrame)
 from PyQt6.QtCore import Qt, pyqtSignal, QObject, QThread
-from PyQt6.QtGui import QPixmap, QImage, QPalette, QColor, QFont
+from PyQt6.QtGui import QPixmap
 
 from flask import Flask, request, jsonify
 
