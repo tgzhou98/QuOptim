@@ -9,7 +9,6 @@ from pathlib import Path
 
 # Add src to path for imports  
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
-
 from gate_optimize.server import mcp
 
 
@@ -34,3 +33,5 @@ class TestMCPServerBasics:
     
     # Circuit generation functionality is tested in test_mcp_tools.py
     # MCP framework call structure is complex and already covered by direct function tests
+
+
