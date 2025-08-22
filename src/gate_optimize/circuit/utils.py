@@ -622,7 +622,7 @@ MEASUREMENT_TIME = 100.0    # Measurement duration
 MOVEMENT_COSTS = np.array([
     [0.0,   400.0, 400.0],  # From readout to [readout, single qubit, entanglement]
     [400.0, 0.0,   100.0],  # From single qubit to [readout, single qubit, entanglement]  
-    [400.0, 100.0, 0.0]     # From entanglement to [readout, single qubit, entanglement]
+    [400.0, 100.0, 50.0]     # From entanglement to [readout, single qubit, entanglement]
 ])
 # ================================
 
