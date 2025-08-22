@@ -357,6 +357,7 @@ dependencies = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "qiskit" },
+    { name = "qiskit-aer" },
     { name = "scipy" },
     { name = "stim" },
     { name = "swanlab" },
@@ -378,6 +379,7 @@ requires-dist = [
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "qiskit", specifier = ">=2.1.1" },
+    { name = "qiskit-aer", specifier = ">=0.17.1" },
     { name = "scipy", specifier = ">=1.16.1" },
     { name = "stim", specifier = ">=1.15.0" },
     { name = "swanlab", specifier = ">=0.6.8" },
@@ -1547,6 +1549,28 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/30/ba384695bc9c9cb5795ef3ab47f33eb579460dc928115918d4eb0046ae9f/qiskit-2.1.1-cp39-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:ca95a1ab710eb3e0fc65dd876734b5c6fc6df1bb78249f86913d77ed1984983f", size = 7411176, upload-time = "2025-07-11T13:15:16.62Z" },
     { url = "https://files.pythonhosted.org/packages/75/dc/551c6afe0aa087ebe53988173290904ded5bf93e56b22503d8311d421d82/qiskit-2.1.1-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8b41c66958c2e0550bc1047524cd754dce2277bea0a1db1085c052cc5bb07ec6", size = 7458353, upload-time = "2025-07-10T21:30:08.223Z" },
     { url = "https://files.pythonhosted.org/packages/83/6c/988791f56e6ab2999e1a4c7e60831b0f02c3e29a467400bced501ce6b637/qiskit-2.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:e7225798221ecf0c8a5cf2e96c37d6d9d00674a412e8c397542fe387909b80db", size = 7234838, upload-time = "2025-07-10T21:30:10.121Z" },
+]
+
+[[package]]
+name = "qiskit-aer"
+version = "0.17.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "psutil" },
+    { name = "python-dateutil" },
+    { name = "qiskit" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f7/37/40d06dab01752712a8ad903c175f282088f5d92ede2fc558e9b43622ec27/qiskit_aer-0.17.1.tar.gz", hash = "sha256:4de47d5a23e283e6cea44186002ab296212c4d837705c528818fbb6cfd28c185", size = 6551853, upload-time = "2025-06-04T12:06:02.68Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/66/4b/48a9632a9bd1da013bc2284b9981cb507bf9d8e8000db48368d16bbbe691/qiskit_aer-0.17.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:e42b44dc688650c6fc5c26488cd31569e9c0ac6a1e471f62c9ef2b806f2c6e28", size = 2478586, upload-time = "2025-06-04T12:05:10.254Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/f6/7b2695e51737e902d7c7369fe4f37e93871b91637161057e0f1e34138943/qiskit_aer-0.17.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:f50eaa64c2559a50e272b0f0fb2c793fde63de222e95f51279134348a1cf50a0", size = 2166198, upload-time = "2025-06-04T12:05:11.771Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/eb/313087f7435d84d0d4de683226be1a890346b157e3def7dd9542412d5879/qiskit_aer-0.17.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4bac894b887a06a812b4a2d5f4af10e47f6fbc0d4f85c35cc79074b624eac13a", size = 6432886, upload-time = "2025-06-04T13:27:25.729Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/0d/7510036dd3ec271a83128b9d042481f43e106050adf2f9c7ffa6a7ae9cb2/qiskit_aer-0.17.1-cp313-cp313-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:cb2f2e7a45d2904c692cf67bf6d118a7e7f6f05e3141381ac99fe182c9fa6fbc", size = 7944357, upload-time = "2025-06-04T12:05:13.222Z" },
+    { url = "https://files.pythonhosted.org/packages/28/32/c538d890e1ccf2392ba8d39e430ef23c11a5c00808d69ccff03ee17df9ae/qiskit_aer-0.17.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bf023d8394ce3241552c88086a06359a4f260af3a4a40c99be00afe3e538b252", size = 12353593, upload-time = "2025-06-04T12:05:15.359Z" },
+    { url = "https://files.pythonhosted.org/packages/55/fb/d0a80540227909e3508f19d84f67e4b6edd2830822e657863e2353b5b915/qiskit_aer-0.17.1-cp313-cp313-win32.whl", hash = "sha256:491c598bae41300a37df80050b81d5097ca27060e7c4e876b853e30f056d2a07", size = 6900856, upload-time = "2025-06-04T12:05:17.451Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/f2/0e2260961c721ba0889e3f7fcdd69e5a7a24694b135d7ad5b6fe55e84e16/qiskit_aer-0.17.1-cp313-cp313-win_amd64.whl", hash = "sha256:de793b75f19d762981198d6c770c991a5d4e0d32bc1768416cfa1520e28bdcf8", size = 9524145, upload-time = "2025-06-04T12:05:20.308Z" },
 ]
 
 [[package]]

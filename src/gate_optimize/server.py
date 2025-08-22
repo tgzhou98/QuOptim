@@ -13,6 +13,7 @@ from .circuit.environment import Environment
 from .circuit.experiment import Experiment
 from .circuit import utils
 from .circuit.runner import parse
+from .circuit.fidelity_simulation import simulate_circuit_fidelity
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.linalg import expm
@@ -804,6 +805,9 @@ async def generate_circuit_from_stabilizers(
         results.append(f"\n🔄 Generating {min(num_circuits, 5)} circuit variants...")
         best_circuits, _ = exp.evaluate(env, n_eps=min(num_circuits, 5), num_best=min(num_circuits, 5), verbose=0)
         
+        # Store fidelity data for comparison table
+        fidelity_comparison = []
+        
         for circuit_num, (actions, _, _, final_fidelity) in enumerate(best_circuits):
             results.append(f"\n--- CIRCUIT VARIANT {circuit_num + 1} ---")
 
@@ -831,18 +835,63 @@ async def generate_circuit_from_stabilizers(
             
             gate_names = [env.gates[a] for a in int_actions if a < len(env.gates)]
             
-            results.append(f"RL Fidelity: {final_fidelity:.6f}")
+            # Calculate physical error model fidelity
+            try:
+                # Make a copy without measurements for fidelity calculation
+                qc_no_meas = qc.copy()
+                if any(instr.name == 'measure' for instr, _, _ in qc_no_meas.data):
+                    qc_no_meas = qc_no_meas.remove_final_measurements(inplace=False)
+                
+                fidelity_result = simulate_circuit_fidelity(qc_no_meas, error_model='physical', num_shots=1000, seed=42)
+                physical_fidelity = fidelity_result['fidelity']
+                physical_error_rate = fidelity_result['error_rate']
+                results.append(f"RL Fidelity (Training): {final_fidelity:.6f}")
+                results.append(f"Physical Error Model Fidelity: {physical_fidelity:.6f}")
+                results.append(f"Physical Error Rate: {physical_error_rate:.6f}")
+                
+                # Store for comparison table
+                fidelity_comparison.append({
+                    'method': f'RL Variant {circuit_num + 1}',
+                    'gate_count': len(qc.data),
+                    'training_fidelity': final_fidelity,
+                    'physical_fidelity': physical_fidelity,
+                    'physical_error_rate': physical_error_rate
+                })
+                
+            except Exception as fid_error:
+                results.append(f"RL Fidelity (Training): {final_fidelity:.6f}")
+                results.append(f"⚠ Physical fidelity calculation failed: {fid_error}")
+                physical_fidelity = None
+                physical_error_rate = None
+                
+                # Store for comparison table (with error info)
+                fidelity_comparison.append({
+                    'method': f'RL Variant {circuit_num + 1}',
+                    'gate_count': len(qc.data),
+                    'training_fidelity': final_fidelity,
+                    'physical_fidelity': None,
+                    'physical_error_rate': None
+                })
+            
             results.append("RL Circuit Diagram:")
             results.append(str(qc.draw('text', fold=80)))  # Convert to string
             results.append(f"RL Gate Array: {gate_names}")
             results.append(f"RL Gate Count: {len(qc.data)}")
             
             # Generate PNG diagram for RL circuit
-
             plt.close('all')
-            fig, ax = plt.subplots(figsize=(12, 6))
+            fig, ax = plt.subplots(figsize=(14, 8))
             qc.draw('mpl', ax=ax)
-            ax.set_title(f"RL Circuit Variant {circuit_num + 1} - Fidelity: {final_fidelity:.6f}, Gate Count = {len(qc.data)}")
+            
+            # Enhanced title with both fidelities
+            title_parts = [f"RL Circuit Variant {circuit_num + 1}"]
+            title_parts.append(f"Training Fidelity: {final_fidelity:.6f}")
+            if physical_fidelity is not None:
+                title_parts.append(f"Physical Fidelity: {physical_fidelity:.6f}")
+                title_parts.append(f"Error Rate: {physical_error_rate:.4f}")
+            title_parts.append(f"Gates: {len(qc.data)}")
+            
+            ax.set_title(" | ".join(title_parts), fontsize=12, pad=20)
             
             import io
             img_buffer = io.BytesIO()
@@ -861,23 +910,6 @@ async def generate_circuit_from_stabilizers(
                 results.append("✅ Generated execution timeline visualization")
             except Exception as timeline_error:
                 results.append(f"⚠ Timeline generation error: {timeline_error}")
-
-  
-            # Store image data for later inclusion in results
-            images.append(ImageContent(type="image", data=img_base64, mimeType="image/png"))
-            
-            # Generate timeline plot
-            try:
-                from .circuit.utils import plot_timeline
-                timeline_img_base64 = plot_timeline(int_actions, env)
-                images.append(ImageContent(type="image", data=timeline_img_base64, mimeType="image/png"))
-                results.append("✅ Generated execution timeline visualization")
-            except Exception as timeline_error:
-                results.append(f"⚠ Timeline generation error: {timeline_error}")
-
-  
-            # Store image data for later inclusion in results
-            images.append(ImageContent(type="image", data=img_base64, mimeType="image/png"))
         
         # Add Qiskit benchmarks for comparison (only once, not per circuit)
         import qiskit.quantum_info as qi
@@ -912,6 +944,43 @@ async def generate_circuit_from_stabilizers(
         for method_name, benchmark_qc in benchmarks.items():
             results.append(f"\n{method_name.upper()} Circuit:")
             results.append(f"Gate Count: {len(benchmark_qc.data)}")
+            
+            # Calculate physical error model fidelity for benchmark circuit
+            try:
+                # Make a copy without measurements for fidelity calculation
+                benchmark_qc_no_meas = benchmark_qc.copy()
+                if any(instr.name == 'measure' for instr, _, _ in benchmark_qc_no_meas.data):
+                    benchmark_qc_no_meas = benchmark_qc_no_meas.remove_final_measurements(inplace=False)
+                
+                benchmark_fidelity_result = simulate_circuit_fidelity(benchmark_qc_no_meas, error_model='physical', num_shots=1000, seed=42)
+                benchmark_physical_fidelity = benchmark_fidelity_result['fidelity']
+                benchmark_physical_error_rate = benchmark_fidelity_result['error_rate']
+                results.append(f"Physical Error Model Fidelity: {benchmark_physical_fidelity:.6f}")
+                results.append(f"Physical Error Rate: {benchmark_physical_error_rate:.6f}")
+                
+                # Store for comparison table
+                fidelity_comparison.append({
+                    'method': method_name.upper(),
+                    'gate_count': len(benchmark_qc.data),
+                    'training_fidelity': None,  # N/A for classical methods
+                    'physical_fidelity': benchmark_physical_fidelity,
+                    'physical_error_rate': benchmark_physical_error_rate
+                })
+                
+            except Exception as fid_error:
+                results.append(f"⚠ Physical fidelity calculation failed: {fid_error}")
+                benchmark_physical_fidelity = None
+                benchmark_physical_error_rate = None
+                
+                # Store for comparison table (with error info)
+                fidelity_comparison.append({
+                    'method': method_name.upper(),
+                    'gate_count': len(benchmark_qc.data),
+                    'training_fidelity': None,
+                    'physical_fidelity': None,
+                    'physical_error_rate': None
+                })
+            
             if len(benchmark_qc.data) < 30:  # Only show diagram for small circuits
                 results.append("Circuit Diagram:")
                 results.append(str(benchmark_qc.draw('text', fold=80)))
@@ -919,9 +988,17 @@ async def generate_circuit_from_stabilizers(
                 # Generate PNG diagram for benchmark circuit
                 try:
                     plt.close('all')
-                    fig, ax = plt.subplots(figsize=(12, 6))
+                    fig, ax = plt.subplots(figsize=(14, 8))
                     benchmark_qc.draw('mpl', ax=ax)
-                    ax.set_title(f"{method_name.upper()} Circuit - Gate Count: {len(benchmark_qc.data)}")
+                    
+                    # Enhanced title with fidelity information
+                    title_parts = [f"{method_name.upper()} Circuit"]
+                    if benchmark_physical_fidelity is not None:
+                        title_parts.append(f"Physical Fidelity: {benchmark_physical_fidelity:.6f}")
+                        title_parts.append(f"Error Rate: {benchmark_physical_error_rate:.4f}")
+                    title_parts.append(f"Gates: {len(benchmark_qc.data)}")
+                    
+                    ax.set_title(" | ".join(title_parts), fontsize=12, pad=20)
                     
                     import io
                     img_buffer = io.BytesIO()
@@ -946,6 +1023,48 @@ async def generate_circuit_from_stabilizers(
                     results.append(f"⚠ {method_name.upper()} timeline generation error: {timeline_error}")
                     
                     
+        # Add fidelity comparison table
+        if fidelity_comparison:
+            results.append(f"\n--- FIDELITY COMPARISON SUMMARY ---")
+            results.append("Physical Error Model Analysis (Realistic Noise):")
+            results.append("")
+            
+            # Table header
+            header = f"{'Method':<15} {'Gates':<6} {'Training Fid':<12} {'Physical Fid':<12} {'Error Rate':<10}"
+            results.append(header)
+            results.append("-" * len(header))
+            
+            # Sort by physical fidelity (descending), handling None values
+            sorted_comparison = sorted(fidelity_comparison, 
+                                     key=lambda x: x['physical_fidelity'] if x['physical_fidelity'] is not None else 0, 
+                                     reverse=True)
+            
+            for entry in sorted_comparison:
+                method = entry['method'][:14]  # Truncate long names
+                gates = str(entry['gate_count'])
+                
+                if entry['training_fidelity'] is not None:
+                    train_fid = f"{entry['training_fidelity']:.6f}"
+                else:
+                    train_fid = "N/A"
+                    
+                if entry['physical_fidelity'] is not None:
+                    phys_fid = f"{entry['physical_fidelity']:.6f}"
+                    error_rate = f"{entry['physical_error_rate']:.4f}"
+                else:
+                    phys_fid = "ERROR"
+                    error_rate = "ERROR"
+                
+                row = f"{method:<15} {gates:<6} {train_fid:<12} {phys_fid:<12} {error_rate:<10}"
+                results.append(row)
+            
+            results.append("")
+            results.append("📊 Key Insights:")
+            results.append("• Physical fidelity accounts for realistic trapped-ion noise")
+            results.append("• Training fidelity is from RL environment (may differ from physical)")
+            results.append("• Lower gate count generally correlates with higher fidelity")
+            results.append("• Error rates include gate errors, decoherence, and measurement errors")
+        
         results.append(f"\n{'=' * 60}")
             
 
