@@ -613,21 +613,53 @@ def gaussian_smoothen(data: list, window=20):
 # QUANTUM OPERATION TIMING CONSTANTS FOR TIMELINE VISUALIZATION
 # ================================
 # Time constants (in microseconds) - centralized control
-SINGLE_QUBIT_TIME = 10.0    # Single-qubit gate duration (H, S)
-TWO_QUBIT_TIME = 5.0       # Two-qubit gate duration (CX)  
+SINGLE_QUBIT_TIME = 20.0    # Single-qubit gate duration (H, S)
+TWO_QUBIT_TIME = 10.0       # Two-qubit gate duration (CX)  
 MEASUREMENT_TIME = 100.0    # Measurement duration
 
 # Zone movement cost matrix (in microseconds)
-# Zones: 0=storage, 1=entangling, 2=readout
+# Zones: 0=readout, 1=single qubit gate, 2=entanglement
 MOVEMENT_COSTS = np.array([
-    [0.0,  400.0, 400.0],  # From storage to [storage, entangling, readout]
-    [400.0, 200.0,  400.0],  # From entangling to [storage, entangling, readout]  
-    [400.0, 400.0, 0.0]   # From readout to [storage, entangling, readout]
+    [0.0,   400.0, 400.0],  # From readout to [readout, single qubit, entanglement]
+    [400.0, 0.0,   100.0],  # From single qubit to [readout, single qubit, entanglement]  
+    [400.0, 100.0, 0.0]     # From entanglement to [readout, single qubit, entanglement]
 ])
 # ================================
 
 
-def plot_timeline(action_sequence, env, save_path=None):
+def get_inverse_gate_name(gate_name):
+    """Get the inverse gate name for visualization purposes."""
+    # Extract gate type and qubit info
+    if gate_name.startswith('h('):
+        return gate_name  # H is self-inverse
+    elif gate_name.startswith('hsdgh('):
+        # hsdgh inverse is hsh
+        qubit = gate_name.split('(')[1].split(')')[0]
+        return f'hsh({qubit})'
+    elif gate_name.startswith('hsh('):
+        # hsh inverse is hsdgh  
+        qubit = gate_name.split('(')[1].split(')')[0]
+        return f'hsdgh({qubit})'
+    elif gate_name.startswith('sdg('):
+        # sdg inverse is s
+        qubit = gate_name.split('(')[1].split(')')[0]
+        return f's({qubit})'
+    elif gate_name.startswith('s('):
+        # s inverse is sdg
+        qubit = gate_name.split('(')[1].split(')')[0]
+        return f'sdg({qubit})'
+    elif gate_name.startswith('x('):
+        return gate_name  # X is self-inverse
+    elif gate_name.startswith('y('):
+        return gate_name  # Y is self-inverse
+    elif gate_name.startswith('z('):
+        return gate_name  # Z is self-inverse
+    elif gate_name.startswith('cnot('):
+        return gate_name  # CNOT is self-inverse
+    else:
+        return gate_name  # Default: assume self-inverse
+
+def plot_timeline(action_sequence, env, save_path=None, reverse=False):
     """ Plot execution timeline showing when each qubit is busy with operations.
     
     Creates a Gantt chart visualization adapted from the JAX-based environment logic
@@ -637,16 +669,21 @@ def plot_timeline(action_sequence, env, save_path=None):
         action_sequence: List of action indices taken in the circuit
         env: The circuit Environment object containing gate and target information
         save_path: Optional path to save the plot (if None, returns base64 string)
+        reverse: If True, reverse the gate sequence and show inverse gates
         
     Returns:
         Base64 encoded image string for display or save path if provided
     """
+    # Handle reverse mode
+    if reverse:
+        action_sequence = list(reversed(action_sequence))
+    
     n_total = env.qubits
     final_time = len(action_sequence)
     
     # Initialize timeline tracking
     qubit_free_time = np.zeros(n_total)
-    current_zones = np.zeros(n_total, dtype=np.uint8)  # All qubits start in storage (zone 0)
+    current_zones = np.ones(n_total, dtype=np.uint8)  # All qubits start in single qubit gate zone (zone 1)
     
     # Store operations for visualization: list of (qubit_idx, start_time, end_time, operation_name, operation_type)
     operations = []
@@ -657,17 +694,20 @@ def plot_timeline(action_sequence, env, save_path=None):
         # Get action info
         action = action_sequence[step]
         gate_name = env.gates[action]
+        # Use inverse gate name if in reverse mode
+        if reverse:
+            gate_name = get_inverse_gate_name(gate_name)
         targets = env.targets[action]  # List of qubit indices for this gate
         
         # Determine operation parameters based on gate type
         is_single_qubit = len(targets) == 1
         
         if is_single_qubit:
-            target_zones = np.array([0, -1])  # Storage zone, second qubit unused
+            target_zones = np.array([1, -1])  # Single qubit gate zone, second qubit unused
             operation_time = SINGLE_QUBIT_TIME
             op_type = 'single_qubit'
         else:
-            target_zones = np.array([1, 1])   # Both qubits to entangling zone
+            target_zones = np.array([2, 2])   # Both qubits to entanglement zone
             operation_time = TWO_QUBIT_TIME
             op_type = 'two_qubit'
         
@@ -734,6 +774,26 @@ def plot_timeline(action_sequence, env, save_path=None):
     for step in range(final_time):
         simulate_single_action(step)
     
+    # Calculate total execution time (when the last qubit finishes)
+    total_execution_time = max([end_time for _, _, end_time, _, _ in operations]) if operations else 0
+    
+    # Add idle time blocks for all unoccupied periods
+    for qubit_idx in range(n_total):
+        # Get all operations for this qubit and sort by start time
+        qubit_operations = [(start_time, end_time) for q_idx, start_time, end_time, _, _ in operations if q_idx == qubit_idx]
+        qubit_operations.sort()
+        
+        current_time = 0.0
+        for start_time, end_time in qubit_operations:
+            # Add idle time before this operation if there's a gap
+            if current_time < start_time:
+                operations.append((qubit_idx, current_time, start_time, 'idle', 'idle'))
+            current_time = end_time
+        
+        # Add idle time from last operation to total execution time
+        if current_time < total_execution_time:
+            operations.append((qubit_idx, current_time, total_execution_time, 'idle', 'idle'))
+    
     # Create the plot with wider aspect ratio for better gate visibility
     plt.close('all')
     fig, ax = plt.subplots(figsize=(20, max(4, n_total * 0.6)))
@@ -743,7 +803,8 @@ def plot_timeline(action_sequence, env, save_path=None):
         'single_qubit': '#3498db',        # Blue
         'two_qubit': '#e74c3c',           # Red
         'inter_zone_movement': '#f1c40f', # Yellow (between different zones)
-        'intra_zone_movement': '#2ecc71'  # Green (within same zone)
+        'intra_zone_movement': '#2ecc71', # Green (within same zone)
+        'idle': '#808080'                 # Gray (idle time)
     }
     
     # Plot operations as rectangles
@@ -753,7 +814,8 @@ def plot_timeline(action_sequence, env, save_path=None):
             (start_time, qubit_idx - 0.4),  # (x, y) bottom-left corner
             duration,                       # width (duration)
             0.8,                           # height (qubit lane height)
-            linewidth=0,                   # Remove edge lines for better color visibility
+            linewidth=1,                   # Thin black boundary
+            edgecolor='black',             # Black edge color
             facecolor=colors[op_type],
             alpha=0.8                      # Slightly less transparent
         )
@@ -761,7 +823,7 @@ def plot_timeline(action_sequence, env, save_path=None):
         
         # Add operation label if the rectangle is wide enough
         if duration > 8:  # Lower threshold to show labels on shorter gate operations
-            font_size = 9 if duration > 50 else 7  # Smaller font for narrow blocks
+            font_size = 12 if duration > 50 else 10  # Larger font for better readability
             ax.text(start_time + duration/2, qubit_idx, op_name, 
                    ha='center', va='center', fontsize=font_size, fontweight='bold')
     
@@ -789,7 +851,224 @@ def plot_timeline(action_sequence, env, save_path=None):
         patches.Patch(color=colors['single_qubit'], label='Single Qubit Gate'),
         patches.Patch(color=colors['two_qubit'], label='Two Qubit Gate'), 
         patches.Patch(color=colors['inter_zone_movement'], label='Inter-Zone Movement'),
-        patches.Patch(color=colors['intra_zone_movement'], label='Intra-Zone Movement')
+        patches.Patch(color=colors['intra_zone_movement'], label='Intra-Zone Movement'),
+        patches.Patch(color=colors['idle'], label='Idle')
+    ]
+    ax.legend(handles=legend_elements, loc='upper right')
+    
+    # Add grid for better readability
+    ax.grid(True, alpha=0.3)
+    
+    # Tight layout
+    plt.tight_layout()
+    
+    # Save or return base64
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches='tight')
+        print(f"Timeline plot saved to: {save_path}")
+        plt.close(fig)
+        return save_path
+    else:
+        # Return base64 for display
+        img_buffer = io.BytesIO()
+        fig.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        img_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+        img_buffer.close()
+        plt.close(fig)
+        return img_base64
+
+
+def plot_timeline_qiskit(qiskit_circuit, save_path=None, title_suffix=""):
+    """ Plot execution timeline for a Qiskit circuit showing when each qubit is busy with operations.
+    
+    Creates a Gantt chart visualization for Qiskit circuits, similar to plot_timeline but for
+    benchmark circuits that are already in Qiskit format.
+    
+    Args:
+        qiskit_circuit: Qiskit QuantumCircuit object
+        save_path: Optional path to save the plot (if None, returns base64 string)
+        title_suffix: Additional text to add to the plot title
+        
+    Returns:
+        Base64 encoded image string for display or save path if provided
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+    import io
+    import base64
+    import numpy as np
+    
+    n_total = qiskit_circuit.num_qubits
+    
+    # Initialize timeline tracking
+    qubit_free_time = np.zeros(n_total)
+    current_zones = np.ones(n_total, dtype=np.uint8)  # All qubits start in single qubit gate zone (zone 1)
+    
+    # Store operations for visualization: list of (qubit_idx, start_time, end_time, operation_name, operation_type)
+    operations = []
+    
+    # Process each instruction in the Qiskit circuit
+    for instruction_idx, (instruction, qubits, clbits) in enumerate(qiskit_circuit.data):
+        gate_name = instruction.name
+        qubit_indices = [qiskit_circuit.find_bit(q).index for q in qubits]
+        
+        # Skip SWAP gates completely - ignore them in timeline calculation
+        if gate_name.lower() == 'swap':
+            continue
+        
+        # Determine operation parameters based on gate type
+        is_single_qubit = len(qubit_indices) == 1
+        
+        if is_single_qubit:
+            operation_time = SINGLE_QUBIT_TIME
+            op_type = 'single_qubit'
+            
+            qubit_idx = qubit_indices[0]
+            current_zone = current_zones[qubit_idx]
+            target_zone = 1  # Single qubit gates in single qubit gate zone
+            movement_time = MOVEMENT_COSTS[current_zone, target_zone]
+            
+            # Calculate timing
+            earliest_start_time = qubit_free_time[qubit_idx] + movement_time
+            operation_end_time = earliest_start_time + operation_time
+            
+            # Add movement operation if needed
+            if movement_time > 0:
+                move_type = 'inter_zone_movement' if current_zone != target_zone else 'intra_zone_movement'
+                operations.append((qubit_idx, qubit_free_time[qubit_idx], 
+                                 qubit_free_time[qubit_idx] + movement_time, 
+                                 f'Move {current_zone}→{target_zone}', move_type))
+            
+            # Add gate operation
+            operations.append((qubit_idx, earliest_start_time, operation_end_time, gate_name, op_type))
+            
+            # Update timeline
+            qubit_free_time[qubit_idx] = operation_end_time
+            current_zones[qubit_idx] = target_zone
+            
+        else:
+            # Two-qubit operation (CNOT, CZ, etc.) - both qubits to entanglement zone
+            qubit1_idx = qubit_indices[0]
+            qubit2_idx = qubit_indices[1]
+            
+            operation_time = TWO_QUBIT_TIME
+            op_type = 'two_qubit'
+            
+            current_zone1 = current_zones[qubit1_idx]
+            current_zone2 = current_zones[qubit2_idx]
+            target_zone1 = 2  # entanglement zone
+            target_zone2 = 2  # entanglement zone
+            
+            movement_time1 = MOVEMENT_COSTS[current_zone1, target_zone1]
+            movement_time2 = MOVEMENT_COSTS[current_zone2, target_zone2]
+            
+            # Calculate start time (when both qubits are free and moved to entangling zone)
+            earliest_start_time = max(qubit_free_time[qubit1_idx] + movement_time1, 
+                                    qubit_free_time[qubit2_idx] + movement_time2)
+            operation_end_time = earliest_start_time + operation_time
+            
+            # Add movement operations if needed
+            if movement_time1 > 0:
+                move_type1 = 'inter_zone_movement' if current_zone1 != target_zone1 else 'intra_zone_movement'
+                operations.append((qubit1_idx, qubit_free_time[qubit1_idx], 
+                                 qubit_free_time[qubit1_idx] + movement_time1, 
+                                 f'Move {current_zone1}→{target_zone1}', move_type1))
+            if movement_time2 > 0:
+                move_type2 = 'inter_zone_movement' if current_zone2 != target_zone2 else 'intra_zone_movement'
+                operations.append((qubit2_idx, qubit_free_time[qubit2_idx], 
+                                 qubit_free_time[qubit2_idx] + movement_time2, 
+                                 f'Move {current_zone2}→{target_zone2}', move_type2))
+            
+            # Add gate operation for both qubits
+            operations.append((qubit1_idx, earliest_start_time, operation_end_time, gate_name, op_type))
+            operations.append((qubit2_idx, earliest_start_time, operation_end_time, gate_name, op_type))
+            
+            # Update timeline and zones
+            qubit_free_time[qubit1_idx] = operation_end_time
+            qubit_free_time[qubit2_idx] = operation_end_time
+            current_zones[qubit1_idx] = target_zone1
+            current_zones[qubit2_idx] = target_zone2
+    
+    # Calculate total execution time (when the last qubit finishes)
+    total_execution_time = max([end_time for _, _, end_time, _, _ in operations]) if operations else 0
+    
+    # Add idle time blocks for all unoccupied periods
+    for qubit_idx in range(n_total):
+        # Get all operations for this qubit and sort by start time
+        qubit_operations = [(start_time, end_time) for q_idx, start_time, end_time, _, _ in operations if q_idx == qubit_idx]
+        qubit_operations.sort()
+        
+        current_time = 0.0
+        for start_time, end_time in qubit_operations:
+            # Add idle time before this operation if there's a gap
+            if current_time < start_time:
+                operations.append((qubit_idx, current_time, start_time, 'idle', 'idle'))
+            current_time = end_time
+        
+        # Add idle time from last operation to total execution time
+        if current_time < total_execution_time:
+            operations.append((qubit_idx, current_time, total_execution_time, 'idle', 'idle'))
+    
+    # Create the plot with wider aspect ratio for better gate visibility
+    plt.close('all')
+    fig, ax = plt.subplots(figsize=(20, max(4, n_total * 0.6)))
+    
+    # Color mapping for different operation types
+    colors = {
+        'single_qubit': '#3498db',        # Blue
+        'two_qubit': '#e74c3c',           # Red
+        'inter_zone_movement': '#f1c40f', # Yellow (between different zones)
+        'intra_zone_movement': '#2ecc71', # Green (within same zone)
+        'idle': '#808080'                 # Gray (idle time)
+    }
+    
+    # Plot operations as rectangles
+    for qubit_idx, start_time, end_time, op_name, op_type in operations:
+        duration = end_time - start_time
+        rect = patches.Rectangle(
+            (start_time, qubit_idx - 0.4),  # (x, y) bottom-left corner
+            duration,                       # width (duration)
+            0.8,                           # height (qubit lane height)
+            linewidth=1,                   # Thin black boundary
+            edgecolor='black',             # Black edge color
+            facecolor=colors[op_type],
+            alpha=0.8                      # Slightly less transparent
+        )
+        ax.add_patch(rect)
+        
+        # Add operation label if the rectangle is wide enough
+        if duration > 8:  # Lower threshold to show labels on shorter gate operations
+            font_size = 12 if duration > 50 else 10  # Larger font for better readability
+            ax.text(start_time + duration/2, qubit_idx, op_name, 
+                   ha='center', va='center', fontsize=font_size, fontweight='bold')
+    
+    # Calculate total execution time (when the last qubit finishes)
+    total_execution_time = max([end_time for _, _, end_time, _, _ in operations]) if operations else 0
+    
+    # Customize the plot
+    ax.set_xlabel('Time (microseconds)', fontsize=14)
+    ax.set_ylabel('Qubit Index', fontsize=14)
+    title = f'Qiskit Circuit Execution Timeline{title_suffix} (Total Time: {total_execution_time:.1f}μs)'
+    ax.set_title(title, fontsize=16, fontweight='bold')
+    
+    # Set axis limits and ticks
+    max_time = max([end_time for _, _, end_time, _, _ in operations]) if operations else 0
+    ax.set_xlim(0, max_time * 1.05)
+    ax.set_ylim(-0.5, n_total - 0.5)
+    ax.set_yticks(range(n_total))
+    ax.set_yticklabels([f'Qubit {i}' for i in range(n_total)])
+    
+    # Invert y-axis so Qubit 0 is on top
+    ax.invert_yaxis()
+    
+    # Add legend
+    legend_elements = [
+        patches.Patch(color=colors['single_qubit'], label='Single Qubit Gate'),
+        patches.Patch(color=colors['two_qubit'], label='Two Qubit Gate'), 
+        patches.Patch(color=colors['inter_zone_movement'], label='Inter-Zone Movement'),
+        patches.Patch(color=colors['intra_zone_movement'], label='Intra-Zone Movement'),
+        patches.Patch(color=colors['idle'], label='Idle')
     ]
     ax.legend(handles=legend_elements, loc='upper right')
     
