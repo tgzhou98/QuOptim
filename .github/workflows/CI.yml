@@ -34,8 +34,6 @@ jobs:
       #  Install project dependencies with pytest and run tests
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install pytest
           uv sync
           uv pip list
 
