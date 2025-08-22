@@ -11,8 +11,162 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
 from gate_optimize.server import generate_circuit_from_stabilizers
+from gate_optimize.server import optimize_cz_gate, optimize_x_gate
 from mcp.types import TextContent, ImageContent
 import stim
+
+
+class TestGateOptimization:
+    """Test gate optimization functions."""
+    
+    @pytest.mark.asyncio
+    async def test_optimize_cz_gate_basic(self):
+        """Test basic CZ gate optimization functionality."""
+        result = await optimize_cz_gate(iterations=10, learning_rate=0.3, pulse_time=3.0, time_steps=20)
+        
+        assert isinstance(result, list)
+        assert len(result) == 2  # Should return image and text
+        
+        # Check image content
+        image_content = next(item for item in result if isinstance(item, ImageContent))
+        assert image_content.type == "image"
+        assert image_content.mimeType == "image/png"
+        assert len(image_content.data) > 1000  # Should have substantial image data
+        
+        # Check text content
+        text_content = next(item for item in result if isinstance(item, TextContent))
+        assert "CZ GATE GRAPE OPTIMIZATION" in text_content.text
+        assert "Pulse Parameters:" in text_content.text
+        assert "Final Results:" in text_content.text
+        assert "Bidirectional Evolution Analysis:" in text_content.text
+        assert "Final fidelity:" in text_content.text
+    
+    @pytest.mark.asyncio
+    async def test_optimize_cz_gate_parameters(self):
+        """Test CZ gate optimization with different parameters."""
+        result = await optimize_cz_gate(
+            iterations=15,
+            learning_rate=0.5,
+            pulse_time=5.0,
+            omega_max=1.2,
+            time_steps=30
+        )
+        
+        assert isinstance(result, list)
+        text_content = next(item for item in result if isinstance(item, TextContent))
+        
+        # Check parameter reporting
+        assert "Total time: 5.000" in text_content.text
+        assert "Time steps: 30" in text_content.text
+        assert "Omega_max: 1.2" in text_content.text
+        assert "Learning rate: 0.5" in text_content.text
+        assert "Iterations: 15" in text_content.text
+    
+    @pytest.mark.asyncio
+    async def test_optimize_x_gate_basic(self):
+        """Test basic X gate optimization functionality."""
+        result = await optimize_x_gate(iterations=10, learning_rate=0.05, fourier_terms=3)
+        
+        assert isinstance(result, list)
+        assert len(result) == 2  # Should return image and text
+        
+        # Check image content
+        image_content = next(item for item in result if isinstance(item, ImageContent))
+        assert image_content.type == "image"
+        assert image_content.mimeType == "image/png"
+        assert len(image_content.data) > 1000  # Should have substantial image data
+        
+        # Check text content
+        text_content = next(item for item in result if isinstance(item, TextContent))
+        assert "X GATE FOURIER OPTIMIZATION" in text_content.text
+        assert "Pulse Parameters:" in text_content.text
+        assert "Initial Conditions:" in text_content.text
+        assert "Optimization Progress:" in text_content.text
+        assert "Final Results:" in text_content.text
+        assert "Robustness Analysis" in text_content.text
+    
+    @pytest.mark.asyncio
+    async def test_optimize_x_gate_parameters(self):
+        """Test X gate optimization with different parameters."""
+        result = await optimize_x_gate(
+            iterations=12,
+            learning_rate=0.08,
+            fourier_terms=4,
+            pulse_time=3.0,
+            omega_max=0.8,
+            rise_fall_ratio=0.05,
+            optimize_sine_terms=True
+        )
+        
+        assert isinstance(result, list)
+        text_content = next(item for item in result if isinstance(item, TextContent))
+        
+        # Check parameter reporting
+        assert "Total time: 9.425" in text_content.text  # π × 3.0
+        assert "Fourier terms: 4" in text_content.text
+        assert "Rise/fall times:" in text_content.text
+        assert "Optimize sine terms: True" in text_content.text
+        assert "Learning rate: 0.08" in text_content.text
+        assert "Iterations: 12" in text_content.text
+    
+    @pytest.mark.asyncio
+    async def test_optimize_x_gate_robustness(self):
+        """Test X gate optimization robustness analysis."""
+        result = await optimize_x_gate(iterations=8, fourier_terms=2)
+        
+        text_content = next(item for item in result if isinstance(item, TextContent))
+        
+        # Check robustness analysis output
+        assert "Robustness Analysis (3x3 Optimization Grid):" in text_content.text
+        assert "Extended Robustness Analysis (11x11 Evaluation Grid):" in text_content.text
+        assert "R0.98_D" in text_content.text  # Should have robustness grid points
+        assert "R1.00_D" in text_content.text
+        assert "R1.02_D" in text_content.text
+        # Check for enhanced robustness metrics
+        assert "Average evaluation fidelity (11x11):" in text_content.text
+        assert "Robustness range:" in text_content.text
+    
+    @pytest.mark.asyncio
+    async def test_gate_optimization_convergence(self):
+        """Test that both gate optimizations show convergence behavior."""
+        # Test CZ gate
+        cz_result = await optimize_cz_gate(iterations=20, learning_rate=0.4)
+        cz_text = next(item for item in cz_result if isinstance(item, TextContent))
+        
+        # Should show optimization progress
+        assert "Optimization Progress:" in cz_text.text
+        assert "Iter" in cz_text.text
+        assert "Fidelity =" in cz_text.text
+        
+        # Test X gate  
+        x_result = await optimize_x_gate(iterations=20, learning_rate=0.05)
+        x_text = next(item for item in x_result if isinstance(item, TextContent))
+        
+        # Should show optimization progress
+        assert "Optimization Progress:" in x_text.text
+        assert "Iter" in x_text.text
+        assert "Avg Fidelity =" in x_text.text
+    
+    @pytest.mark.asyncio
+    async def test_gate_optimization_output_format(self):
+        """Test that both functions return consistent output format."""
+        # Test both functions return [ImageContent, TextContent]
+        cz_result = await optimize_cz_gate(iterations=5)
+        x_result = await optimize_x_gate(iterations=5)
+        
+        for result in [cz_result, x_result]:
+            assert len(result) == 2
+            assert any(isinstance(item, ImageContent) for item in result)
+            assert any(isinstance(item, TextContent) for item in result)
+            
+            # Check image has proper metadata
+            image = next(item for item in result if isinstance(item, ImageContent))
+            assert image.mimeType == "image/png"
+            assert len(image.data) > 0
+            
+            # Check text is not empty
+            text = next(item for item in result if isinstance(item, TextContent))
+            assert len(text.text) > 100  # Should have substantial text content
 
 
 class TestStabilizerParsing:
