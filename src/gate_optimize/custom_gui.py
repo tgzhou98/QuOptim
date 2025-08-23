@@ -98,8 +98,8 @@ class MainWindow(QMainWindow):
         zoom_control_layout = QHBoxLayout()
         zoom_control_layout.addWidget(QLabel("Zoom:"))
         self.zoom_slider = QSlider(Qt.Orientation.Horizontal)
-        self.zoom_slider.setRange(20, 200)
-        self.zoom_slider.setValue(100)
+        self.zoom_slider.setRange(20, 100)
+        self.zoom_slider.setValue(40)
         self.zoom_slider.setFixedWidth(200)
         self.zoom_label = QLabel("100%")
         self.zoom_label.setFixedWidth(50)
@@ -164,7 +164,7 @@ class MainWindow(QMainWindow):
             child = self.image_layout.takeAt(0)
             if child.widget(): child.widget().deleteLater()
         
-        self.zoom_slider.setValue(100)
+        self.zoom_slider.setValue(40)
 
         images_base64 = data.get("main_images", [])
         for img_b64 in images_base64:
