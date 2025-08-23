@@ -28,7 +28,6 @@ mcp = FastMCP("mcp-gate-optimize")
 GUI_ENDPOINT = "http://127.0.0.1:12345/update"
 
 def send_to_gui(**kwargs):
-    """一个辅助函数，用于将结构化数据发送到自定义GUI"""
     try:
         kwargs.setdefault("status", "finished")
         requests.post(GUI_ENDPOINT, json=kwargs, timeout=2)
@@ -948,6 +947,61 @@ async def generate_circuit_from_stabilizers(
                     
         results.append(f"\n{'=' * 60}")
             
+
+    all_generated_circuits = []
+    for i, (actions, _, _, fidelity) in enumerate(best_circuits):
+        try:
+            # TODO: Buggy
+            qc = env.get_inverted_ckt([a.item() for a in actions])
+            all_generated_circuits.append({
+                "name": f"RL Variant {i+1}",
+                "circuit": qc,
+                "gate_count": len(qc.data)
+            })
+        except Exception:
+            pass
+
+    for method_name, benchmark_qc in benchmarks.items():
+        all_generated_circuits.append({
+            "name": f"Qiskit-{method_name.upper()}",
+            "circuit": benchmark_qc,
+            "gate_count": len(benchmark_qc.data)
+        })
+
+    if all_generated_circuits:
+        best_circuit_info = min(all_generated_circuits, key=lambda x: x['gate_count'])
+        best_qc_name = best_circuit_info['name']
+        best_qc = best_circuit_info['circuit']
+        
+        results.append(f"\n--- CIRCUIT SIMPLIFICATION ---")
+        results.append(f"Selected the best initial circuit for simplification: '{best_qc_name}' with {len(best_qc.data)} gates.")
+        
+        from qiskit.compiler import transpile
+        
+        simplified_qc = transpile(best_qc, basis_gates=['h', 's', 'cx', 'sdg'], optimization_level=3)
+        
+        results.append(f"After simplification, gate count is reduced to: {len(simplified_qc.data)}")
+        
+        plt.close('all')
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12))
+        best_qc.draw('mpl', ax=ax1, fold=-1)
+        ax1.set_title(f"Before Simplification: '{best_qc_name}' (Gate Count: {len(best_qc.data)})", fontsize=14)
+        
+        simplified_qc.draw('mpl', ax=ax2, fold=-1)
+        ax2.set_title(f"After Simplification (Gate Count: {len(simplified_qc.data)})", fontsize=14)
+        
+        plt.tight_layout()
+        
+        import io
+        img_buffer = io.BytesIO()
+        fig.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        simplification_img_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+        images.append(ImageContent(type="image", data=simplification_img_base64, mimeType="image/png"))
+        img_buffer.close()
+        plt.close(fig)
+        
+        results.append("\nGenerated comparison plot for simplification.")
 
     final_text = "\n".join(results)
     images_base64 = [img.data for img in images]
