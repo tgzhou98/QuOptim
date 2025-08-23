@@ -25,7 +25,7 @@ class TestMCPServerBasics:
         expected_tools = [
             "optimize_cz_gate",
             "optimize_x_gate", 
-            "generate_circuit_from_stabilizers"
+            "generate_circuits"
         ]
         
         for expected_tool in expected_tools:
