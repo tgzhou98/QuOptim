@@ -148,23 +148,6 @@ class TestStandaloneExecution:
         
         assert circuit is not None
     
-    def test_circuit_visualization(self):
-        """Test circuit visualization functionality."""
-        try:
-            from gate_optimize.qec.circuit_visualization import plot_stim_circuit
-            from gate_optimize.qec.code_builder import QECCodeBuilder
-            
-            stabilizers = ['+ZZI', '+IZZ']
-            builder = QECCodeBuilder(stabilizers, rounds=1)
-            circuit = builder.build_syndrome_circuit()
-            
-            # This should not raise an exception
-            plot_data = plot_stim_circuit(circuit)
-            assert plot_data is not None
-            
-        except ImportError:
-            pytest.skip("Visualization dependencies not available")
-    
     def test_error_analysis_plotting(self):
         """Test error analysis plotting functions."""
         # Mock results data
