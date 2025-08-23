@@ -40,22 +40,27 @@ def simulate_circuit_fidelity(qiskit_circuit, error_model='physical', num_shots=
     if any(instr.name == 'measure' for instr, _, _ in ideal_circuit.data):
         ideal_circuit = ideal_circuit.remove_final_measurements(inplace=False)
     
-    # Simulate ideal circuit
+    # Transpile both circuits with the same backend to ensure they're equivalent
     ideal_simulator = AerSimulator(method='statevector')
-    ideal_circuit.save_statevector()  # Save statevector for retrieval
-    ideal_result = ideal_simulator.run(ideal_circuit, shots=1).result()
+    noisy_simulator = AerSimulator(noise_model=noise_model, method='density_matrix')
+    
+    # Transpile both circuits identically 
+    transpiled_ideal = transpile(ideal_circuit, ideal_simulator)
+    transpiled_noisy = transpile(ideal_circuit, noisy_simulator)  # Use same base circuit
+    
+    # Debug: Check if circuits are different after transpilation
+    print(f"Original circuit gates: {len(ideal_circuit.data)}")
+    print(f"Transpiled ideal gates: {len(transpiled_ideal.data)}")
+    print(f"Transpiled noisy gates: {len(transpiled_noisy.data)}")
+    
+    # Simulate ideal circuit
+    transpiled_ideal.save_statevector()  # Save statevector for retrieval
+    ideal_result = ideal_simulator.run(transpiled_ideal, shots=1).result()
     ideal_statevector = ideal_result.data(0)['statevector']
     
     # Simulate noisy circuit  
-    noisy_simulator = AerSimulator(noise_model=noise_model, method='density_matrix')
-    # Make a copy for noisy simulation without save instruction
-    noisy_circuit = qiskit_circuit.copy()
-    if any(instr.name == 'measure' for instr, _, _ in noisy_circuit.data):
-        noisy_circuit = noisy_circuit.remove_final_measurements(inplace=False)
-    
-    transpiled_circuit = transpile(noisy_circuit, noisy_simulator)
-    transpiled_circuit.save_density_matrix()  # Save density matrix for retrieval
-    noisy_result = noisy_simulator.run(transpiled_circuit, shots=1).result()
+    transpiled_noisy.save_density_matrix()  # Save density matrix for retrieval
+    noisy_result = noisy_simulator.run(transpiled_noisy, shots=1).result()
     noisy_density_matrix = noisy_result.data(0)['density_matrix']
     
     # Calculate fidelity between ideal and noisy states
