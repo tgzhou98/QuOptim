@@ -118,12 +118,11 @@ async def analyze_qec_logical_error_rate(
         save_stim=True,
         save_svg=True
     )
-    
+    noisy_circuit = _add_noise_to_circuit(circuit, 0.001)
     # Generate PNG images for MCP transfer
     try:
         print("Generating circuit images for MCP transfer...")
         base_circuit_png = circuit_to_png_base64(circuit, dpi=300)
-        noisy_circuit = _add_noise_to_circuit(circuit, 0.001)
         noisy_circuit_png = circuit_to_png_base64(noisy_circuit, dpi=300)
     except Exception as e:
         print(f"Error generating circuit images: {e}")
