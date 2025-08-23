@@ -628,36 +628,69 @@ MOVEMENT_COSTS = np.array([
 
 
 def get_inverse_gate_name(gate_name):
-    """Get the inverse gate name for visualization purposes."""
-    # Extract gate type and qubit info
+    """Get the inverse gate name for visualization purposes without target qubits, in lowercase letters."""
+    # Extract gate type and return inverse without qubit info
     if gate_name.startswith('h('):
-        return gate_name  # H is self-inverse
+        return 'h'  # H is self-inverse
     elif gate_name.startswith('hsdgh('):
         # hsdgh inverse is hsh
-        qubit = gate_name.split('(')[1].split(')')[0]
-        return f'hsh({qubit})'
+        return 'hsh'
     elif gate_name.startswith('hsh('):
         # hsh inverse is hsdgh  
-        qubit = gate_name.split('(')[1].split(')')[0]
-        return f'hsdgh({qubit})'
+        return 'hsdgh'
     elif gate_name.startswith('sdg('):
         # sdg inverse is s
-        qubit = gate_name.split('(')[1].split(')')[0]
-        return f's({qubit})'
+        return 's'
     elif gate_name.startswith('s('):
         # s inverse is sdg
-        qubit = gate_name.split('(')[1].split(')')[0]
-        return f'sdg({qubit})'
+        return 'sdg'
     elif gate_name.startswith('x('):
-        return gate_name  # X is self-inverse
+        return 'x'  # X is self-inverse
     elif gate_name.startswith('y('):
-        return gate_name  # Y is self-inverse
+        return 'y'  # Y is self-inverse
     elif gate_name.startswith('z('):
-        return gate_name  # Z is self-inverse
+        return 'z'  # Z is self-inverse
     elif gate_name.startswith('cnot('):
-        return gate_name  # CNOT is self-inverse
+        return 'cx'  # CNOT is self-inverse, call it cx
+    elif gate_name.startswith('cx('):
+        return 'cx'  # CX is self-inverse
+    elif gate_name.startswith('t('):
+        return 'tdg'  # T inverse is TDG
+    elif gate_name.startswith('tdg('):
+        return 't'  # TDG inverse is T
     else:
-        return gate_name  # Default: assume self-inverse
+        # For any other gates, just lowercase and remove parentheses
+        return gate_name.split('(')[0].lower()
+
+def format_gate_name(gate_name):
+    """Convert gate names to lowercase letters without target qubits, CNOT -> cx"""
+    if gate_name.startswith('h('):
+        return 'h'
+    elif gate_name.startswith('hsdgh('):
+        return 'hsdgh'
+    elif gate_name.startswith('hsh('):
+        return 'hsh'
+    elif gate_name.startswith('sdg('):
+        return 'sdg'
+    elif gate_name.startswith('s('):
+        return 's'
+    elif gate_name.startswith('x('):
+        return 'x'
+    elif gate_name.startswith('y('):
+        return 'y'
+    elif gate_name.startswith('z('):
+        return 'z'
+    elif gate_name.startswith('cnot('):
+        return 'cx'
+    elif gate_name.startswith('cx('):
+        return 'cx'
+    elif gate_name.startswith('t('):
+        return 't'
+    elif gate_name.startswith('tdg('):
+        return 'tdg'
+    else:
+        # For any other gates, just lowercase and remove parentheses
+        return gate_name.split('(')[0].lower()
 
 def plot_timeline(action_sequence, env, save_path=None, reverse=False):
     """ Plot execution timeline showing when each qubit is busy with operations.
