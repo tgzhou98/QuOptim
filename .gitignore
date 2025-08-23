@@ -19,6 +19,9 @@ src/**/*.png
 # log files
 *.log
 
+# Data files
+data/
+
 # macOS system files
 .DS_Store
 **/.DS_Store

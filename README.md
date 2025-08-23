@@ -15,12 +15,16 @@ A Model Context Protocol (MCP) server for quantum gate optimization in neutral a
 - **Proximal Policy Optimization (PPO)**: Advanced RL algorithm for gate sequence optimization
 - **Environment Simulation**: Custom RL environment for quantum circuit optimization
 
+### qec for any quantum code (`src/gate_optimize/qec/`)
+- **Quantum error correction**: run decoder for the quantum code
+
 ## Project Structure
 ```
 gate_optimize/
 ├── src/gate_optimize/
 │   ├── pulse/           # Hardware pulse optimization
 │   ├── circuit/         # ML circuit optimization  
+│   ├── qec/             # error correction code 
 │   └── server.py        # MCP server implementation
 ├── model/               # Trained models and evaluation data
 │   ├── plots/          # Training results and visualizations
