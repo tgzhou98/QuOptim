@@ -1,5 +1,7 @@
 # MCP Gate Optimize
 
+![CI](https://github.com/tgzhou98/QuOptim/workflows/CI/badge.svg)
+
 A Model Context Protocol (MCP) server for quantum gate optimization in neutral atom systems.
 
 ## Features
