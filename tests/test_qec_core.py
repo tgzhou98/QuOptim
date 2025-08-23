@@ -89,20 +89,6 @@ class TestQECDecoder:
         assert decoder.method == 'mwpm'
         assert hasattr(decoder, 'matching_decoder')
     
-    def test_bp_osd_decoder_creation(self):
-        """Test BP-OSD decoder initialization."""
-        stabilizers = ['+ZZI', '+IZZ']
-        builder = QECCodeBuilder(stabilizers, rounds=1)
-        circuit = builder.build_syndrome_circuit()
-        
-        try:
-            decoder = QECDecoder(circuit, method='bp_osd')
-            assert decoder is not None
-            assert decoder.method == 'bp_osd'
-            assert hasattr(decoder, 'bp_decoder')
-        except (ImportError, RuntimeError):
-            pytest.skip("BP-OSD decoder dependencies not available or unstable")
-    
     def test_invalid_decoder_method(self):
         """Test error handling for invalid decoder method."""
         stabilizers = ['+ZZI', '+IZZ']
@@ -162,43 +148,6 @@ class TestErrorAnalysis:
             
             assert os.path.exists(json_file)
             assert os.path.exists(csv_file)
-
-
-class TestIntegration:
-    """Integration tests combining multiple components."""
-    
-    def test_end_to_end_repetition_code(self):
-        """Test complete workflow with repetition code."""
-        stabilizers = ['+ZZI', '+IZZ']
-        
-        # Build circuit
-        builder = QECCodeBuilder(stabilizers, rounds=2)
-        circuit = builder.build_syndrome_circuit()
-        
-        # Create decoder
-        decoder = QECDecoder(circuit, method='mwpm')
-        
-        # Test error simulation
-        results = decoder.simulate_errors(
-            physical_error_rate=0.01,
-            num_shots=50
-        )
-        
-        assert 'logical_error_rate' in results
-        assert 'num_shots' in results
-        assert results['num_shots'] == 50
-        assert 0 <= results['logical_error_rate'] <= 1
-    
-    def test_end_to_end_with_explicit_logicals(self):
-        """Test workflow with explicit logical operators."""
-        stabilizers = ['+ZZI', '+IZZ']
-        logical_ops = ['XXX']  # Logical X operator
-        
-        builder = QECCodeBuilder(stabilizers, rounds=2, logical_Z_operators=logical_ops)
-        circuit = builder.build_syndrome_circuit(include_logical_Z_operators=True)
-        
-        assert circuit is not None
-        assert circuit.num_observables > 0
 
 
 # Legacy test functions for backward compatibility

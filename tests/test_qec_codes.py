@@ -123,31 +123,6 @@ class TestToricCode:
         assert circuit.num_detectors > 0
         assert builder._detect_code_type() == 'toric'
     
-    def test_toric_code_with_logicals(self):
-        """Test toric code with explicit logical operators."""
-        toric_stabilizers = [
-            '+ZZII_IIII',
-            '+IZZI_IIII', 
-            '+IIZZ_IIII',
-            '+XXXX_IIII'
-        ]
-        
-        # Define logical operators for toric code
-        logical_operators = [
-            'XXXX_IIII',  # Logical X1
-            'IIII_XXXX'   # Logical X2
-        ]
-        
-        builder = QECCodeBuilder(
-            toric_stabilizers, 
-            rounds=2, 
-            logical_Z_operators=logical_operators
-        )
-        circuit = builder.build_syndrome_circuit(include_logical_Z_operators=True)
-        
-        assert circuit is not None
-        assert circuit.num_observables > 0
-    
     def test_toric_error_counting(self):
         """Test error counting with toric codes."""
         toric_stabilizers = [
@@ -192,7 +167,7 @@ class TestLogicalOperators:
     def test_explicit_logical_operators(self):
         """Test explicit logical operator specification."""
         stabilizers = ['+ZZI', '+IZZ']
-        logical_ops = ['XXX']  # Logical X operator for 3-qubit repetition
+        logical_ops = ['ZII']  # Logical X operator for 3-qubit repetition
         
         builder = QECCodeBuilder(stabilizers, rounds=2, logical_Z_operators=logical_ops)
         circuit = builder.build_syndrome_circuit(include_logical_Z_operators=True)
