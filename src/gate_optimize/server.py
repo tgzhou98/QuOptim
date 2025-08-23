@@ -931,3 +931,20 @@ async def simplify_best_circuit(
         TextContent(type="text", text=final_text),
         ImageContent(type="image", data=simplification_img_base64, mimeType="image/png")
     ]
+
+# Import and register QEC tools
+from . import server_qec
+
+@mcp.tool(
+    name="analyze_qec_logical_error_rate",
+    description="Analyze quantum error correction codes by calculating logical error rates vs physical error rates using MWPM and BP-OSD decoders.",
+)
+async def analyze_qec_logical_error_rate(
+    stabilizers: Annotated[List[str], "List of stabilizer strings for the quantum error correction code (e.g., ['+ZZ_____', '+_ZZ____', '+XXXXXXX'] for 7-qubit Steane code)"],
+    logical_Z_operators: Annotated[List[str], "List of logical Z operator strings for the code (e.g., ['ZZZZZZZ'] for Steane code logical X and Z operators). Optional for auto-detection."] = None,
+    rounds: Annotated[int, "Number of syndrome measurement rounds"] = 3,
+    decoder_method: Annotated[str, "Decoding method: 'mwpm', 'bp_osd', or 'both' for comparison"] = 'mwpm',
+) -> list[ImageContent | TextContent]:
+    return await server_qec.analyze_qec_logical_error_rate(
+        stabilizers, logical_Z_operators, rounds, decoder_method
+    )
