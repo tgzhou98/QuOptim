@@ -1,0 +1,3 @@
+[deps]
+ModelContextProtocol = "c58f755f-f2a7-4f48-bf29-4e9659b78499"
+TensorQEC = "0500ac79-7fb5-4262-aaea-37bb1845d1ef"
