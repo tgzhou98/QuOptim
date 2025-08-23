@@ -6,6 +6,7 @@ readme = "README.md"
 authors = [{ name = "Someone in tsinghua", email = "" }]
 requires-python = ">=3.13"
 dependencies = [
+    "cairosvg>=2.8.2",
     "flask>=3.1.2",
     "ipykernel>=6.30.1",
     "ldpc>=2.3.8",
@@ -21,6 +22,7 @@ dependencies = [
     "pytest-asyncio>=1.1.0",
     "qiskit>=2.1.1",
     "qiskit-aer>=0.17.1",
+    "qiskit-qasm3-import>=0.6.0",
     "scipy>=1.16.1",
     "stim>=1.15.0",
     "swanlab>=0.6.8",

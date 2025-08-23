@@ -5,9 +5,10 @@ Circuit visualization functions for QEC circuits.
 import stim
 from typing import Optional, List
 import os
+import base64
 from .error_analysis import _add_noise_to_circuit
 
-
+ 
 def plot_stim_circuit(circuit: stim.Circuit, save_path: str = None, title: str = "QEC Circuit") -> str:
     """
     Plot a Stim circuit using Stim's native timeline-svg diagram and save as SVG.
@@ -34,6 +35,53 @@ def plot_stim_circuit(circuit: stim.Circuit, save_path: str = None, title: str =
     
     print(f"Circuit diagram SVG saved to: {save_path}")
     return save_path
+
+
+def circuit_to_png_base64(circuit: stim.Circuit, dpi: int = 300) -> str:
+    """
+    Convert a Stim circuit to PNG format and return as base64 string for MCP transfer.
+    
+    Args:
+        circuit: Stim circuit to visualize
+        dpi: DPI for PNG output (default: 300 for high quality)
+        
+    Returns:
+        Base64 encoded PNG image string
+    """
+    import cairosvg
+    import re
+    
+    # Generate SVG content
+    svg_content = str(circuit.diagram('timeline-svg'))
+    
+    # Add white background to SVG
+    # Find the opening <svg> tag and add a white rectangle background
+    svg_match = re.search(r'<svg[^>]*>', svg_content)
+    if svg_match:
+        svg_tag = svg_match.group()
+        # Extract viewBox dimensions if available
+        viewbox_match = re.search(r'viewBox="([^"]*)"', svg_tag)
+        if viewbox_match:
+            viewbox = viewbox_match.group(1)
+            x, y, width, height = viewbox.split()
+            # Insert white background rectangle after the opening svg tag
+            background_rect = f'<rect x="{x}" y="{y}" width="{width}" height="{height}" fill="white"/>'
+            svg_content = svg_content.replace(svg_tag, svg_tag + '\n' + background_rect, 1)
+        else:
+            # Fallback: add a large white background rectangle
+            background_rect = '<rect x="0" y="0" width="100%" height="100%" fill="white"/>'
+            svg_content = svg_content.replace(svg_tag, svg_tag + '\n' + background_rect, 1)
+    
+    # Convert SVG to PNG using cairosvg with high DPI
+    png_bytes = cairosvg.svg2png(
+        bytestring=svg_content.encode('utf-8'),
+        dpi=dpi
+    )
+    
+    # Encode as base64
+    png_base64 = base64.b64encode(png_bytes).decode('utf-8')
+    
+    return png_base64
 
 
 def plot_noisy_circuit(
