@@ -119,6 +119,12 @@ async def analyze_qec_logical_error_rate(
         save_svg=True
     )
     
+    # Generate PNG images for MCP transfer
+    print("Generating circuit images for MCP transfer...")
+    base_circuit_png = circuit_to_png_base64(circuit, dpi=300)
+    noisy_circuit = _add_noise_to_circuit(circuit, 0.001)
+    noisy_circuit_png = circuit_to_png_base64(noisy_circuit, dpi=300)
+    
     # Add circuit information to results
     results.append(f"CIRCUIT INFORMATION")
     results.append("-" * 30)
@@ -251,10 +257,26 @@ async def analyze_qec_logical_error_rate(
     circuit_text += "-" * 50 + "\n"
     circuit_text += circuit_content
     
+    # Add circuit images to the response
+    circuit_images = []
+    if base_circuit_png:
+        circuit_images.append(ImageContent(
+            type="image", 
+            data=base_circuit_png, 
+            mimeType="image/png"
+        ))
+    if noisy_circuit_png:
+        circuit_images.append(ImageContent(
+            type="image", 
+            data=noisy_circuit_png, 
+            mimeType="image/png"
+        ))
+    
     content_list = [
         TextContent(type="text", text=final_text),
         TextContent(type="text", text=circuit_text)
     ]
-    content_list.extend(images)
+    content_list.extend(circuit_images)  # Add circuit images first
+    content_list.extend(images)  # Then add error rate plots
     
     return content_list
