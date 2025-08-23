@@ -307,5 +307,64 @@ def example_usage():
                           f"{error_info.get('error_rate_per_gate', 0):.6f} error rate")
 
 
+def _create_custom_noise_model(single_q_error_rate, two_q_error_rate, measurement_error_rate):
+    from qiskit_aer.noise import NoiseModel, depolarizing_error, ReadoutError
+
+    noise_model = NoiseModel()
+
+    p_1q = single_q_error_rate
+    error_1q = depolarizing_error(p_1q, 1)
+    noise_model.add_all_qubit_quantum_error(error_1q, ['h', 's', 'sdg', 'x', 'y', 'z', 'sx'])
+
+    p_2q = two_q_error_rate
+    error_2q = depolarizing_error(p_2q, 2)
+    noise_model.add_all_qubit_quantum_error(error_2q, ['cx', 'cz', 'cnot'])
+
+    p_meas = measurement_error_rate
+    error_meas = ReadoutError([[1 - p_meas, p_meas], [p_meas, 1 - p_meas]])
+    noise_model.add_all_qubit_readout_error(error_meas)
+
+    return noise_model
+
+
+def simulate_circuit_fidelity_custom(qiskit_circuit, custom_errors, num_shots=1000, seed=42):
+
+    from qiskit_aer import AerSimulator
+    from qiskit import transpile
+
+    p_1q = custom_errors.get('single_qubit', 1e-3)
+    p_2q = custom_errors.get('two_qubit', 5e-2)
+    p_meas = custom_errors.get('measurement', 0.02)
+
+    noise_model = _create_custom_noise_model(p_1q, p_2q, p_meas)
+    
+    ideal_circuit = qiskit_circuit.copy()
+    if any(instr.name == 'measure' for instr, _, _ in ideal_circuit.data):
+        ideal_circuit = ideal_circuit.remove_final_measurements(inplace=False)
+    
+    ideal_simulator = AerSimulator(method='statevector')
+    ideal_circuit.save_statevector()
+    ideal_result = ideal_simulator.run(ideal_circuit, shots=1).result()
+    ideal_statevector = ideal_result.data(0)['statevector']
+
+    noisy_simulator = AerSimulator(noise_model=noise_model, method='density_matrix')
+    noisy_circuit = qiskit_circuit.copy()
+    if any(instr.name == 'measure' for instr, _, _ in noisy_circuit.data):
+        noisy_circuit = noisy_circuit.remove_final_measurements(inplace=False)
+    
+    transpiled_circuit = transpile(noisy_circuit, noisy_simulator)
+    transpiled_circuit.save_density_matrix()
+    noisy_result = noisy_simulator.run(transpiled_circuit, shots=1).result()
+    noisy_density_matrix = noisy_result.data(0)['density_matrix']
+    
+    fidelity = _calculate_state_fidelity(ideal_statevector, noisy_density_matrix)
+    
+    return {
+        'fidelity': float(fidelity),
+        'error_rate': float(1.0 - fidelity),
+        'used_errors': {'single_qubit': p_1q, 'two_qubit': p_2q, 'measurement': p_meas}
+    }
+
+
 if __name__ == "__main__":
     example_usage()
