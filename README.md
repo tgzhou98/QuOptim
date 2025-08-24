@@ -6,6 +6,7 @@ An MCP (Model Context Protocol) server with a built‑in GUI for pulse- and circ
 
 - **Pulse level**: GRAPE‑based CZ and robust X gate design with visualization and robustness analysis.
 - **Circuit level**: RL‑assisted circuit synthesis plus Qiskit baselines, timeline plotting, transpile‑based simplification, and fidelity comparison under either a physical noise model or calibrated data.
+- **QEC analysis**: Quantum error correction code analysis with logical error rate calculation and decoder comparison.
 - **Monitoring GUI**: A PyQt6 dashboard receives live updates from tools (plots, fidelity traces, text summaries) via a local Flask endpoint.
 
 ## Features
@@ -22,7 +23,14 @@ An MCP (Model Context Protocol) server with a built‑in GUI for pulse- and circ
 - **Fidelity simulation**: Physical model or calibrated model based on analyzed benchmark data.
 
 ### QEC Utilities (`src/gate_optimize/qec/`)
-- Tools for code construction, decoding, and visualization (see module docs and tests).
+- **Circuit construction**: Build syndrome measurement circuits from stabilizer generators.
+- **Error analysis**: Calculate logical error rates vs physical error rates.
+- **Decoder comparison**: MWPM and BP-OSD decoder performance analysis.
+- **Circuit visualization**: Generate and visualize QEC circuits with noise.
+
+### Julia MCP Server (`juliamcp/`)
+- **Code definition**: Generate stabilizer generators and logical operators for various QEC codes.
+- **Distance calculation**: Compute code distance using integer programming.
 
 ## Project Structure
 ```
@@ -37,7 +45,11 @@ gate_optimize/
 ├── model/
 │   ├── plots/            # Trained RL policies and training artifacts
 │   └── eval/             # Benchmarks/params (e.g., 7‑bit GHZ/Steane)
-└── pyproject.toml        # Dependencies and console script
+├── pyproject.toml        # Dependencies and console script
+└── juliamcp
+    ├── server.jl         # Julia server script
+    └── Project.toml      # Julia dependencies
+
 ```
 
 ## Available MCP Tools
