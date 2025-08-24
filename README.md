@@ -3,7 +3,7 @@
 ![CI](https://github.com/tgzhou98/QuOptim/workflows/CI/badge.svg)
 
 ## Overview
-
+![main](./figures/main.png)
 In neutral atom quantum computers, there exists a massive "compilation gap" between high-level scientific objectives (such as implementing a quantum error correction code) and the ability to generate efficient, high-fidelity physical control instructions that can run on real hardware. **AtomQuampiler** is designed as an intelligent, automated solution to bridge this gap.
 
 AtomQuampiler constructs a complete, full-stack compilation and optimization pipeline. Users simply input a quantum error correction code in natural language, and AtomQuampiler initiates an intelligent workflow composed of multiple MCP tools:
