@@ -53,7 +53,6 @@ class QECDecoder:
             # Get parity check matrix from circuit
             dem = self.circuit.detector_error_model(decompose_errors=True)
             self.parity_check_matrix = self._dem_to_check_matrix(dem)
-            
             # Validate matrix dimensions
             if self.parity_check_matrix.size == 0:
                 raise RuntimeError("Empty parity check matrix")
