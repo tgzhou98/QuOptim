@@ -165,15 +165,15 @@ def calculate_logical_error_rate(
     
     # Calculate error rates for each physical error rate
     for p_error in physical_error_rates:
-        print(f"Simulating physical error rate: {p_error:.4f}")
+        # print(f"Simulating physical error rate: {p_error:.4f}")
         
         # Add noise to circuit
         noisy_circuit = _add_noise_to_circuit(base_circuit, p_error)
-        if p_error < 0.002:
-            print(f"  Noisy circuit with p={p_error:.4f} prepared")
-            print(f"\n\n")
-            print(f"""{noisy_circuit}""")
-            print(f"\n\n")
+        # if p_error < 0.002:
+        #     print(f"  Noisy circuit with p={p_error:.4f} prepared")
+        #     print(f"\n\n")
+        #     print(f"""{noisy_circuit}""")
+        #     print(f"\n\n")
         
         # Count logical errors using standard stim approach
         if decoder_method == 'mwpm':
@@ -420,7 +420,7 @@ def plot_error_rate_curve(results: Dict, save_path: str = None) -> str:
             plt.savefig(save_path, dpi=150, bbox_inches='tight')
             file_size = os.path.getsize(save_path)
             logger.debug(f"  ✅ Plot saved: {file_size} bytes")
-            print(f"Plot saved to: {save_path}")
+            # print(f"Plot saved to: {save_path}")
         except Exception as e:
             logger.error(f"  ❌ Failed to save plot: {e}")
             raise
@@ -467,7 +467,7 @@ def analyze_decoder_comparison(
     }
     
     for method in methods:
-        print(f"Testing {method.upper()} decoder...")
+        # print(f"Testing {method.upper()} decoder...")
         method_results = calculate_logical_error_rate(
             stabilizers, physical_error_rates, num_shots, rounds, method
         )
@@ -510,7 +510,7 @@ def plot_decoder_comparison(comparison_results: Dict, save_path: str = None) -> 
     
     if save_path:
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        print(f"Comparison plot saved to: {save_path}")
+        # print(f"Comparison plot saved to: {save_path}")
     
     # Convert to base64
     import io
@@ -583,7 +583,7 @@ def save_results_to_data(results: Dict, filename: str, data_dir: str = 'data'):
         
         file_size = os.path.getsize(json_path)
         logger.debug(f"  ✅ JSON file saved: {file_size} bytes")
-        print(f"Results saved to: {json_path}")
+        # print(f"Results saved to: {json_path}")
     except Exception as e:
         logger.error(f"  ❌ Failed to save JSON file: {e}")
         raise
@@ -601,7 +601,7 @@ def save_results_to_data(results: Dict, filename: str, data_dir: str = 'data'):
         
         file_size = os.path.getsize(csv_path)
         logger.debug(f"  ✅ CSV file saved: {file_size} bytes")
-        print(f"Summary saved to: {csv_path}")
+        # print(f"Summary saved to: {csv_path}")
     except Exception as e:
         logger.error(f"  ❌ Failed to save CSV file: {e}")
         raise

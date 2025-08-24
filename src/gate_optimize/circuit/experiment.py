@@ -225,17 +225,17 @@ class Experiment:
         plt.close('all')
         
     def evaluate(self, env: Union[Environment, None]=None, n_eps: int=1, num_best: int=1, verbose: int=1):
-        print("Evaluating", env is not None, flush=True)
+        # print("Evaluating", env is not None, flush=True)
         eval_env = env if env is not None else self.sample_env
-        print("test:", eval_env.target_state.to_stabilizers(canonicalize=True), flush=True)
-        print("test:", eval_env.start_state[0].to_stabilizers(canonicalize=True), flush=True)
+        # print("test:", eval_env.target_state.to_stabilizers(canonicalize=True), flush=True)
+        # print("test:", eval_env.start_state[0].to_stabilizers(canonicalize=True), flush=True)
         self.results = self.agent.evaluate(eval_env, n_eps)
-        print("test:", eval_env.start_state[0].to_stabilizers(canonicalize=True), flush=True)
+        # print("test:", eval_env.start_state[0].to_stabilizers(canonicalize=True), flush=True)
         eval_results = PrettyTable(['Episode #', 'Number of steps', 'reward', 'final_state', 'fidelity score'])
         eval_results.add_rows([[i, len(acts), rew, *rest] for i, (rew, acts, *rest) in enumerate(self.results)])
-        if verbose == 2:
-            print(eval_results)
-        else: pass
+        # if verbose == 2:
+        #     print(eval_results)
+        # else: pass
         stats = [[acts, rew, *rest] for rew, acts, *rest in self.results]
         
         return sorted(stats, key=lambda val: (not (val[3]>1-eval_env.tol), len(val[0]) + 1-val[3]))[:num_best], eval_results

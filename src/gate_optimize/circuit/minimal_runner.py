@@ -102,25 +102,25 @@ def print_rl_circuit(actions, env, fidelity, target_tableau):
                     qc.s(qubit)
     
     # Print RL results
-    print(f"RL Fidelity: {fidelity:.6f}")
-    print("RL Circuit Diagram:")
-    print(qc.draw('text', fold=-1))
+    # print(f"RL Fidelity: {fidelity:.6f}")
+    # print("RL Circuit Diagram:")
+    # print(qc.draw('text', fold=-1))
     
     gate_names = [env.gates[a.item() if hasattr(a, 'item') else a] for a in actions]
-    print("RL Gate Array:", gate_names)
-    print(f"RL Gate Count: {len(qc.data)}")
+    # print("RL Gate Array:", gate_names)
+    # print(f"RL Gate Count: {len(qc.data)}")
     
     # Get and print Qiskit benchmarks
     stabilizer_strings = [str(s) for s in target_tableau.to_stabilizers()]
     benchmarks = get_qiskit_benchmarks(stabilizer_strings)
     
-    print("\n--- QISKIT BENCHMARKS ---")
+    # print("\n--- QISKIT BENCHMARKS ---")
     
     for method_name, benchmark_qc in benchmarks.items():
-        print(f"\n{method_name.upper()} Circuit:")
-        print(f"Gate Count: {len(benchmark_qc.data)}")
-        print("Circuit Diagram:")
-        print(benchmark_qc.draw('text', fold=-1))
+        # print(f"\n{method_name.upper()} Circuit:")
+        # print(f"Gate Count: {len(benchmark_qc.data)}")
+        # print("Circuit Diagram:")
+        # print(benchmark_qc.draw('text', fold=-1))
         
         # Get gate array for benchmark using modern Qiskit API
         gate_array = []
@@ -154,9 +154,9 @@ def print_rl_circuit(actions, env, fidelity, target_tableau):
                 # If all else fails, just show the gate name
                 gate_array.append(f"{gate_name}")
                 
-        print(f"Gate Array: {gate_array}")
+        # print(f"Gate Array: {gate_array}")
     
-    print("\n" + "="*80)
+    # print("\n" + "="*80)
     return qc
 
 def load_steane_targets(testfile):
@@ -173,7 +173,7 @@ def load_steane_targets(testfile):
         testfile_path = testfile
     
     if not os.path.exists(testfile_path):
-        print(f"Test file not found: {testfile_path}")
+        # print(f"Test file not found: {testfile_path}")
         return []
     
     with open(testfile_path, 'r') as f:
@@ -289,21 +289,16 @@ def run_minimal_circuit_generation():
     
     # Now print only the clean results
     for i, (target_tableau, env, best_circuits) in enumerate(all_results):
-        print(f"TARGET STATE {i+1}")
-        print(f"Stabilizers: {[str(s) for s in target_tableau.to_stabilizers()]}")
+        # print(f"TARGET STATE {i+1}")
+        # print(f"Stabilizers: {[str(s) for s in target_tableau.to_stabilizers()]}")
         
         for j, (actions, _, _, fidelity) in enumerate(best_circuits):
-            print(f"\nCircuit {j+1}:")
+            # print(f"\nCircuit {j+1}:")
             print_rl_circuit(actions, env, fidelity, target_tableau)
 
 def main():
     """Main entry point."""
-    try:
-        run_minimal_circuit_generation()
-    except KeyboardInterrupt:
-        print("Interrupted")
-    except Exception as e:
-        print(f"Error: {e}")
+    run_minimal_circuit_generation()
 
 if __name__ == "__main__":
     main()

@@ -33,7 +33,7 @@ def plot_stim_circuit(circuit: stim.Circuit, save_path: str = None, title: str =
     with open(save_path, 'w', encoding='utf-8') as f:
         f.write(str(svg_content))
     
-    print(f"Circuit diagram SVG saved to: {save_path}")
+    # print(f"Circuit diagram SVG saved to: {save_path}")
     return save_path
 
 
@@ -118,11 +118,11 @@ def plot_noisy_circuit(
         with open(base_path, 'w') as f:
             f.write(str(base_circuit))
         results['base_circuit_path'] = base_path
-        print(f"Base circuit saved to: {base_path}")
+        # print(f"Base circuit saved to: {base_path}")
     
     # Create noisy circuits for each error rate
     for error_rate in error_rates:
-        print(f"Processing error rate: {error_rate}")
+        # print(f"Processing error rate: {error_rate}")
         
         # Generate noisy circuit using the imported function
         noisy_circuit = _add_noise_to_circuit(base_circuit, error_rate)
@@ -140,7 +140,7 @@ def plot_noisy_circuit(
             with open(stim_path, 'w') as f:
                 f.write(str(noisy_circuit))
             circuit_info['stim_path'] = stim_path
-            print(f"  Stim file saved to: {stim_path}")
+            # print(f"  Stim file saved to: {stim_path}")
         
         # Save SVG diagram (only for first error rate to avoid clutter, or if explicitly requested)
         if save_svg and (error_rate == error_rates[0] or len(error_rates) <= 3):
@@ -153,24 +153,25 @@ def plot_noisy_circuit(
                 with open(svg_path, 'w') as f:
                     f.write(str(diagram))
                 circuit_info['svg_path'] = svg_path
-                print(f"  SVG diagram saved to: {svg_path}")
+                # print(f"  SVG diagram saved to: {svg_path}")
             except Exception as e:
-                print(f"  Warning: Could not generate SVG diagram for p={error_rate}: {e}")
+                pass
+                # print(f"  Warning: Could not generate SVG diagram for p={error_rate}: {e}")
         
         results['noisy_circuits'][error_rate] = circuit_info
     
     # Summary
     abs_data_dir = os.path.abspath(data_dir)
-    print(f"\nAll files saved in directory: {abs_data_dir}")
-    print("Circuit files created:")
-    if results['base_circuit_path']:
-        print(f"  - {os.path.basename(results['base_circuit_path'])}")
+    # print(f"\nAll files saved in directory: {abs_data_dir}")
+    # print("Circuit files created:")
+    # if results['base_circuit_path']:
+        # print(f"  - {os.path.basename(results['base_circuit_path'])}")
     
-    for error_rate, info in results['noisy_circuits'].items():
-        if info['stim_path']:
-            print(f"  - {os.path.basename(info['stim_path'])}")
-        if info['svg_path']:
-            print(f"  - {os.path.basename(info['svg_path'])}")
+    # for error_rate, info in results['noisy_circuits'].items():
+    #     if info['stim_path']:
+    #         print(f"  - {os.path.basename(info['stim_path'])}")
+    #     if info['svg_path']:
+    #         print(f"  - {os.path.basename(info['svg_path'])}")
     
     return results
 
@@ -195,14 +196,14 @@ def demo_noisy_circuit_from_stabilizers(
     """
     from .code_builder import QECCodeBuilder
     
-    print(f"Creating demo circuit from stabilizers: {stabilizers}")
-    print(f"Rounds: {rounds}, Error rates: {error_rates}")
+    # print(f"Creating demo circuit from stabilizers: {stabilizers}")
+    # print(f"Rounds: {rounds}, Error rates: {error_rates}")
     
     # Create base circuit from stabilizers
     builder = QECCodeBuilder(stabilizers, rounds=rounds)
     base_circuit = builder.build_syndrome_circuit()
     
-    print(f"Base circuit created with {len(str(base_circuit).splitlines())} instructions")
+    # print(f"Base circuit created with {len(str(base_circuit).splitlines())} instructions")
     
     # Generate noisy circuits and save files
     return plot_noisy_circuit(

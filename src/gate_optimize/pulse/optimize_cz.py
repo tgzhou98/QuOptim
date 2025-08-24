@@ -182,7 +182,7 @@ if __name__ == '__main__':
     plt.figure(0)
     while i < 5001:
         fidelity = G.iteration_onestep(lr)
-        print('{}-th\t fidelity: {:4f}'.format(i, fidelity))
+        # print('{}-th\t fidelity: {:4f}'.format(i, fidelity))
         infid.append(abs(1 - fidelity))
         if i % 10 == 0:
             plt.clf()

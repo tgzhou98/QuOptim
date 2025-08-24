@@ -53,25 +53,26 @@ class RobustGRAPEFourierCoeffs():
                 
                 if can_load_a:
                     self.a_coeffs = df_coeffs['a_coeffs'].values
-                    print(f"Successfully loaded initial a_coeffs from {initial_coeffs_file}")
+                    # print(f"Successfully loaded initial a_coeffs from {initial_coeffs_file}")
                     loaded_successfully = True
                 else:
-                     print(f"Warning: Could not load a_coeffs or length mismatch from {initial_coeffs_file}.")
+                    #  print(f"Warning: Could not load a_coeffs or length mismatch from {initial_coeffs_file}.")
+                    pass
 
                 if self.optimize_sine_terms and can_load_b:
                     self.b_coeffs = df_coeffs['b_coeffs'].values
-                    print(f"Successfully loaded initial b_coeffs from {initial_coeffs_file}")
+                    # print(f"Successfully loaded initial b_coeffs from {initial_coeffs_file}")
                 elif self.optimize_sine_terms and not can_load_b:
-                    print(f"Warning: Sine term optimization enabled, but could not load b_coeffs or length mismatch from {initial_coeffs_file}. b_coeffs will be random/zero.")
+                    # print(f"Warning: Sine term optimization enabled, but could not load b_coeffs or length mismatch from {initial_coeffs_file}. b_coeffs will be random/zero.")
                     if not loaded_successfully:
                         self.a_coeffs[1:] = np.random.randn(self.num_fourier_terms) * 0.1
                     self.b_coeffs[1:] = np.random.randn(self.num_fourier_terms) * 0.1
                 elif not self.optimize_sine_terms:
-                    print("Sine term optimization is disabled. b_coeffs will remain zero.")
+                    # print("Sine term optimization is disabled. b_coeffs will remain zero.")
                     self.b_coeffs.fill(0)
 
             except Exception as e:
-                print(f"Error loading initial coefficients from {initial_coeffs_file}: {e}.")
+                # print(f"Error loading initial coefficients from {initial_coeffs_file}: {e}.")
                 loaded_successfully = False
         
         if not loaded_successfully:
@@ -83,7 +84,7 @@ class RobustGRAPEFourierCoeffs():
                 self.b_coeffs[1:] = np.random.randn(self.num_fourier_terms) * 0.1 
             else:
                 self.b_coeffs.fill(0)
-            print("Initialized Fourier coefficients (a0 for DC offset, others small random).")
+            # print("Initialized Fourier coefficients (a0 for DC offset, others small random).")
         
         
         self.fidelity = None
@@ -112,9 +113,9 @@ class RobustGRAPEFourierCoeffs():
         self.v_b_coeffs = np.zeros_like(self.b_coeffs)
 
     def _create_amplitude_envelope(self):
-        if self.rise_time + self.fall_time > self.t_final:
-            print(f"Warning: rise_time ({self.rise_time}) + fall_time ({self.fall_time}) "
-                  f"> t_final ({self.t_final}). The ramps will overlap.")
+        # if self.rise_time + self.fall_time > self.t_final:
+        #     print(f"Warning: rise_time ({self.rise_time}) + fall_time ({self.fall_time}) "
+        #           f"> t_final ({self.t_final}). The ramps will overlap.")
 
         t_centers = (np.arange(self.N_slices_for_evolution) + 0.5) * self.dt_evolution
         omega_values = np.zeros(self.N_slices_for_evolution)
@@ -255,7 +256,7 @@ class RobustGRAPEFourierCoeffs():
             'b_coeffs': self.b_coeffs 
         })
         df.to_csv(filename, index_label='n')
-        print(f"Fourier coefficients exported to {filename}")
+        # print(f"Fourier coefficients exported to {filename}")
 
     def export_reconstructed_pulse_to_csv(self, base_filename="reconstructed_fourier_pulse"):
         timestamp = datetime.now().strftime("%Y%m%d-%H%M")
@@ -271,7 +272,7 @@ class RobustGRAPEFourierCoeffs():
             'Amplitude (units of Omega_max)': amplitude_values / self.Omega_max if self.Omega_max > 0 else amplitude_values
         })
         df.to_csv(filename, index=False)
-        print(f"Reconstructed PWC pulse from Fourier coeffs exported to {filename}")
+        # print(f"Reconstructed PWC pulse from Fourier coeffs exported to {filename}")
 
     
     def evaluate_and_plot_final_robustness(self, fig_final, axs_final):
@@ -386,7 +387,7 @@ if __name__ == '__main__':
             lr=learning_rate, d_coeff=finite_diff_coeff_step
         )
         avg_fidelities_history_opt.append(avg_fidelity_opt_grid) 
-        print(f'Iter: {i:4d}, Avg Opt Fidelity (3x3 grid): {avg_fidelity_opt_grid:.6f}')
+        # print(f'Iter: {i:4d}, Avg Opt Fidelity (3x3 grid): {avg_fidelity_opt_grid:.6f}')
 
         if i % 10 == 0 or i == iterations - 1: 
             ax_live_pulse.clear()
@@ -429,8 +430,8 @@ if __name__ == '__main__':
             fig_live_fids.canvas.draw_idle()
             plt.pause(0.01) 
 
-    print("\nFourier Coefficient Optimization Finished.")
-    print(f"Final Avg Opt Fidelity (3x3 grid): {grape_fourier_instance.fidelity:.6f}")
+    # print("\nFourier Coefficient Optimization Finished.")
+    # print(f"Final Avg Opt Fidelity (3x3 grid): {grape_fourier_instance.fidelity:.6f}")
     
     grape_fourier_instance.export_fourier_coeffs_to_csv(base_filename="optimized_fourier_coeffs")
 
@@ -438,7 +439,7 @@ if __name__ == '__main__':
 
 
     fig_final, axs_final = plt.subplots(1, 2, figsize=(18, 7), num="Final Fourier Pulse and Robustness Map") 
-    print("Evaluating on 11x11 grid and plotting final results...")
+    # print("Evaluating on 11x11 grid and plotting final results...")
     grape_fourier_instance.evaluate_and_plot_final_robustness(fig_final, axs_final)
     plt.tight_layout(pad=3.0) 
     plt.show()
