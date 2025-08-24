@@ -1,13 +1,33 @@
-# MCP Gate Optimize
+# AtomQuampiler - Bridging the Quantum Compilation Gap
 
 ![CI](https://github.com/tgzhou98/QuOptim/workflows/CI/badge.svg)
 
-An MCP (Model Context Protocol) server with a built‑in GUI for pulse- and circuit‑level quantum optimization targeting neutral‑atom systems.
+## Overview
 
-- **Pulse level**: GRAPE‑based CZ and robust X gate design with visualization and robustness analysis.
-- **Circuit level**: RL‑assisted circuit synthesis plus Qiskit baselines, timeline plotting, transpile‑based simplification, and fidelity comparison under either a physical noise model or calibrated data.
-- **QEC analysis**: Quantum error correction code analysis with logical error rate calculation and decoder comparison.
-- **Monitoring GUI**: A PyQt6 dashboard receives live updates from tools (plots, fidelity traces, text summaries) via a local Flask endpoint.
+In neutral atom quantum computers, there exists a massive "compilation gap" between high-level scientific objectives (such as implementing a quantum error correction code) and the ability to generate efficient, high-fidelity physical control instructions that can run on real hardware. **AtomQuampiler** is designed as an intelligent, automated solution to bridge this gap.
+
+AtomQuampiler constructs a complete, full-stack compilation and optimization pipeline. Users simply input a quantum error correction code in natural language, and AtomQuampiler initiates an intelligent workflow composed of multiple MCP tools:
+
+## Core Workflow
+
+### 1. **Quantum Error Correction Code Knowledge Retrieval & Performance Analysis**
+- Generate comprehensive introductions to quantum error correction codes
+- Create quantum circuits and simulate quantum code error correction cycles
+- Implement decoder-based quantum code distance analysis
+
+### 2. **AI-Driven Circuit Generation**
+- Utilize reinforcement learning to explore and generate efficient logical quantum state encoding circuits
+- Perform multi-dimensional comparison (fidelity, gate count) with traditionally generated circuits
+- Apply optimization functions to simplify the optimal circuits
+
+### 3. **Hardware-Aware Co-Design**
+- Analyze and calibrate real hardware noise characteristics from simulated experimental data
+- Extract physical parameters (gate fidelity, SPAM errors) and feed them back to upper layers
+- Enable more accurate quantum circuit evaluation
+
+### 4. **End-to-End Physical Layer Optimization**
+- After selecting the optimal logical circuit, dive deeper into the physical layer
+- Complete pulse design, execute timing planning, and generate final physical control instructions
 
 ## Features
 
@@ -16,11 +36,12 @@ An MCP (Model Context Protocol) server with a built‑in GUI for pulse- and circ
 - **X gate (Robust GRAPE, Fourier)**: Envelope shaping, 3×3 optimization grid, 11×11 robustness map, Bloch‑sphere trajectories.
 
 ### Circuit‑Level Optimization (`src/gate_optimize/circuit/`)
-- **RL policies**: DQN/PPO/VPG support through `Experiment` helpers and pre‑trained models.
-- **Baselines**: Multiple Qiskit synthesizers (AG, BM, greedy, Bravyi) for comparison.
-- **Timeline plotting**: Per‑qubit execution visualization for bottleneck analysis.
-- **Transpile simplification**: Depth reduction over a constrained basis.
-- **Fidelity simulation**: Physical model or calibrated model based on analyzed benchmark data.
+- **RL Policies**: DQN/PPO/VPG support through `Experiment` helpers and pre‑trained models
+- **Baselines**: Multiple Qiskit synthesizers (AG, BM, greedy, Bravyi) for comparison
+- **Timeline Plotting**: Per‑qubit execution visualization for bottleneck analysis
+- **Transpile Simplification**: Depth reduction over a constrained basis
+- **Fidelity Simulation**: Physical model or calibrated model based on analyzed benchmark data
+
 
 ### QEC Utilities (`src/gate_optimize/qec/`)
 - **Circuit construction**: Build syndrome measurement circuits from stabilizer generators.
@@ -29,12 +50,19 @@ An MCP (Model Context Protocol) server with a built‑in GUI for pulse- and circ
 - **Circuit visualization**: Generate and visualize QEC circuits with noise.
 
 ### Julia MCP Server (`juliamcp/`)
-- **Code definition**: Generate stabilizer generators and logical operators for various QEC codes.
-- **Distance calculation**: Compute code distance using integer programming.
+- **Code Definition**: Generate stabilizer generators and logical operators for various QEC codes
+- **Distance Calculation**: Compute code distance using integer programming
+- **Supported Codes**: Surface codes, toric codes, Shor codes, Steane codes, and more
+
+### Monitoring GUI (`src/gate_optimize/custom_gui/`)
+- **Real-time Dashboard**: PyQt6-based monitoring center with live updates
+- **Progress Tracking**: Live fidelity traces, optimization progress, and status updates
+- **Visualization**: Primary result images, circuit diagrams, and timeline plots
+- **Flask Integration**: Local endpoint for tool communication and data streaming
 
 ## Project Structure
 ```
-gate_optimize/
+AtomQuampiler/
 ├── src/gate_optimize/
 │   ├── pulse/            # Hardware pulse optimization
 │   ├── circuit/          # ML circuit optimization
@@ -53,62 +81,62 @@ gate_optimize/
 ```
 
 ## Available MCP Tools
-All tools stream progress and images to the GUI and return results to the MCP client.
 
-- `optimize_cz_gate` (pulse): GRAPE CZ gate optimization with live pulse/fidelity.
-- `optimize_x_gate` (pulse): Robust Fourier‑parameterized X gate with robustness analysis and Bloch‑sphere trajectories.
-- `generate_circuits` (circuit): Create RL and Qiskit baseline circuits from stabilizer generators.
-- `plot_timeline` (circuit): Visualize per‑qubit execution timelines of a selected circuit.
-- `simplify_best_circuit` (circuit): Pick the fewest‑gates circuit, transpile, and compare before/after.
-- `compare_circuits_fidelity` (circuit): Evaluate circuits under a physical noise model or calibrated error rates.
-- `simulate_gate_benchmark_data` (calibration): Generate standardized RB‑style synthetic data for X and CZ.
-- `analyze_gate_fidelity_from_data` (calibration): Fit benchmark data to extract 1Q/2Q fidelities and SPAM error.
+All tools stream progress and images to the GUI and return results to the MCP client, creating a seamless intelligent workflow.
 
-## End‑to‑end workflow: from code to experiment
+### QEC Code Analysis & Circuit Generation
+- `get_code_stabilizers` (Julia): Generate stabilizer generators for various QEC codes
+- `get_code_logicals` (Julia): Extract logical operators for QEC codes
+- `compute_code_distance` (Julia): Calculate code distance using integer programming
+- `analyze_qec_logical_error_rate` (QEC): Analyze QEC codes with logical error rate calculation and decoder comparison
 
-1) Discover code and load stabilizers (external service)
-   - Use a separate code‑discovery server (placeholder: *******; WIP) to extract canonical stabilizer generators for the selected code.
-   - Output: validated stabilizer list for the target code.
+### AI-Driven Circuit Generation
+- `generate_circuits` (circuit): Create RL-optimized and Qiskit baseline circuits from stabilizer generators
+- `simplify_best_circuit` (circuit): Optimize the best circuit using transpile for depth reduction
+- `plot_timeline` (circuit): Visualize per‑qubit execution timelines for bottleneck analysis
 
-2) Reference logical vs physical error rates
-   - Provide a reference curve/table of logical error rate versus physical error rate for the code to set expectations before compilation (leveraging QEC tooling).
+### Hardware Calibration & Fidelity Analysis
+- `simulate_gate_benchmark_data` (calibration): Generate standardized RB‑style synthetic data for X and CZ gates
+- `analyze_gate_fidelity_from_data` (calibration): Fit benchmark data to extract calibrated 1Q/2Q fidelities and SPAM error
+- `compare_circuits_fidelity` (circuit): Evaluate circuits under physical noise model or calibrated error rates
 
-3) Generate candidate preparation circuits
-   - Run `generate_circuits` to produce RL‑optimized and Qiskit baseline circuits (QASM3 and gate counts). Optionally use `simplify_best_circuit` to reduce depth.
+### Physical Layer Optimization
+- `optimize_cz_gate` (pulse): GRAPE CZ gate optimization with live pulse/fidelity visualization
+- `optimize_x_gate` (pulse): Robust Fourier‑parameterized X gate with robustness analysis and Bloch‑sphere trajectories
 
+## Complete Workflow: From QEC Code to Physical Instructions
 
-4) Evaluate circuits with a calibrated noise model
-   - Use `compare_circuits_fidelity` to estimate each circuit’s fidelity under a realistic physical model and shortlist top candidates.
+### Phase 1: Code Definition & Analysis
+1. **Code Definition**: Use Julia MCP tools to generate stabilizer generators for your target QEC code
+2. **Performance Baseline**: Run `analyze_qec_logical_error_rate` to establish logical vs physical error rate expectations
+3. **Circuit Generation**: Execute `generate_circuits` to create multiple circuit variants using RL and classical algorithms
 
-<div align="center">
-<table width="720" border="1" cellspacing="0" cellpadding="8">
-<tr><td>
-<strong>Calibration and feedback iteration loop</strong>
-<ul>
-<li>Ingest experimental benchmark data; run <code>analyze_gate_fidelity_from_data</code> to extract calibrated 1Q/2Q fidelities and SPAM.</li>
-<li>Feed calibrated rates into <code>compare_circuits_fidelity</code> for realistic circuit ranking.</li>
-<li>Revise QEC logical‑vs‑physical assumptions as needed.</li>
-<li>Use calibrated metrics as objectives for later pulse optimization (<code>optimize_x_gate</code>, <code>optimize_cz_gate</code>).</li>
-</ul>
-</td></tr>
-</table>
-</div>
+### Phase 2: Circuit Optimization & Selection
+1. **Timeline Analysis**: Use `plot_timeline` to analyze execution scheduling and identify bottlenecks
+2. **Circuit Simplification**: Apply `simplify_best_circuit` to reduce depth and optimize gate count
+3. **Performance Evaluation**: Run `compare_circuits_fidelity` to rank circuits by simulated performance
 
+### Phase 3: Hardware Calibration & Feedback
+1. **Benchmark Data Generation**: Use `simulate_gate_benchmark_data` to create standardized calibration data
+2. **Fidelity Extraction**: Run `analyze_gate_fidelity_from_data` to extract real hardware parameters
+3. **Calibrated Evaluation**: Feed calibrated rates back into circuit evaluation for realistic ranking
+4. **Iterative Refinement**: Use calibrated metrics to refine QEC assumptions and circuit selection
 
-
-
-
-5) Prepare experimental execution references
-   - Use `plot_timeline` to visualize per‑qubit scheduling, parallelism, and bottlenecks.
-
-6) Hardware pulse optimization
-   - Optimize X and CZ gate pulses (`optimize_x_gate`, `optimize_cz_gate`) and review pulse shapes, convergence, robustness, and Bloch‑sphere trajectories.
+### Phase 4: Physical Layer Optimization
+1. **Pulse Design**: Optimize X and CZ gate pulses using `optimize_x_gate` and `optimize_cz_gate`
+2. **Robustness Analysis**: Review pulse shapes, convergence, and robustness metrics
+3. **Final Instructions**: Generate optimized physical control instructions for hardware execution
 
 ## Installation
-Requires Python ≥ 3.13.
+
+Requires Python ≥ 3.13 and Julia ≥ 1.11.
 
 ```bash
+# Install Python dependencies
 uv sync
+
+# Install Julia dependencies
+julia --project=juliamcp -e "using Pkg; Pkg.instantiate()"
 ```
 
 ## Running the MCP Server + GUI
@@ -122,64 +150,44 @@ uv run mcp-gate-optimize
 uv run python -m gate_optimize
 ```
 
-The GUI listens for updates on `http://127.0.0.1:12345/update` and displays:
-- live fidelity traces
-- primary result images
-- text summaries from tools
+The intelligent monitoring GUI displays:
+- Real-time optimization progress and fidelity traces
+- Live circuit visualizations and timeline plots
+- Hardware calibration results and performance metrics
+- Interactive progress tracking for all workflow phases
 
-You can connect any MCP‑capable client (e.g., CLI or IDE integrations) to the stdio server to invoke tools.
-
-## Typical Workflows
-
-### Pulse optimization
-- Run `optimize_cz_gate` or `optimize_x_gate` from your MCP client to optimize pulses; watch the GUI for live plots.
-
-### Circuit synthesis and comparison
-1) `generate_circuits` with your stabilizer generators (e.g., GHZ/Steane) to obtain RL + Qiskit variants (QASM3).
-2) Optionally `plot_timeline` for a chosen index to analyze scheduling and bottlenecks.
-3) `simplify_best_circuit` to minimize gate count using transpile.
-4) `compare_circuits_fidelity` to rank circuits by simulated fidelity (physical model by default).
-
-### Calibration‑aware evaluation
-1) `simulate_gate_benchmark_data` to create standardized RB‑style data for X and CZ.
-2) `analyze_gate_fidelity_from_data` to fit and extract calibrated 1Q/2Q fidelities and SPAM error.
-3) Pass the returned JSON to `compare_circuits_fidelity` for calibrated circuit ranking.
-
-## Notes on RL models
-`generate_circuits` expects a pre‑trained RL model at a path under `model/plots/<...>/model.pkl` that matches the parameters in `model/eval/7bit_params.json`. If not found, the tool reports a clear error. You can adjust parameters, provide your own trained model, or rely solely on Qiskit baselines.
-
-## Standalone module commands
-For quick experiments without MCP:
-
-- Generate GHZ/Steane circuits from `model/eval/7bit_params.json`:
-  ```bash
-  uv run python -m gate_optimize.circuit.minimal_runner
-  ```
-- Optimize the CZ gate:
-  ```bash
-  uv run python -m gate_optimize.pulse.optimize_cz
-  ```
-- Optimize the X gate:
-  ```bash
-  uv run python -m gate_optimize.pulse.optimize_x
-  ```
+### Julia MCP Server Configuration
+Add to your MCP client configuration:
+```json
+{
+  "mcpServers": {
+    "tensorqec-server": {
+      "command": "julia",
+      "args": ["--project=/path/to/project/juliamcp", "/path/to/project/juliamcp/server.jl"]
+    }
+  }
+}
+```
 
 ## Testing
 ```bash
 uv run pytest -q
 ```
 
+## Dependencies
 
-## Julia MCP Server
-Julia MCP server can generate code stabilizers and logical operators, and compute code distance.
+### Core Dependencies
+- **Quantum Computing**: Qiskit, Stim, PyMatching
+- **Machine Learning**: PyTorch, SwanLab
+- **Optimization**: SciPy, NumPy
+- **Visualization**: Matplotlib, CairoSVG
+- **GUI**: PyQt6, Flask
+- **Protocol**: MCP (Model Context Protocol)
 
-### Installation
-First, install&nbsp;<a href="https://julialang.org"><img src="https://raw.githubusercontent.com/JuliaLang/julia-logo-graphics/master/images/julia.ico" width="16em"> Julia </a> &nbsp;Programming Language. Then run
-```bash
-julia --project=juliamcp -e "using Pkg; Pkg.instantiate()"
-```
-to install the dependencies. Finally, add the following to your MCP client configuration:
-```json
-"command": "julia",
-"args": ["--project=/path/to/project/juliamcp", "/path/to/project/juliamcp/server.jl"]
-```
+### Julia Dependencies
+- **QEC**: TensorQEC, QECCore
+- **Protocol**: ModelContextProtocol
+
+## Contribute
+
+Suggestions and Comments in the [_Issues_](https://github.com/tgzhou98/AtomQuampiler/issues) are welcome.
