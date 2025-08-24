@@ -12,7 +12,7 @@ venv
 
 # PNG files in model directory
 model/**/*.png
-*.png
+# *.png
 # PNG files in source directory
 src/**/*.png
 
