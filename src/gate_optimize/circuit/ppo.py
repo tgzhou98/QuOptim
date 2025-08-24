@@ -68,7 +68,7 @@ class FCCA(nn.Module):
         for hidden_layer in self.hidden_layers:
             x = self.activation_fc(hidden_layer(x))
         if not self.ok:
-            print(f'{self.mask=}', flush=True)
+            # print(f'{self.mask=}', flush=True)
             self.ok = True
         out = self.output_layer(x)
         # print(('value' if self.is_fcv else'policy') + f' {out.min().item():.6f} {out.max().item():.6f} {out.mean().item():.6f}', flush=True)
@@ -233,8 +233,8 @@ class PPO:
 
                 self.policy_optimizer.zero_grad()
                 loss = (policy_loss + entropy_loss)
-                if np.random.rand() < 0.01:
-                    print('loss', policy_loss.item(), entropy_loss.item(), loss.item())
+                # if np.random.rand() < 0.01:
+                    # print('loss', policy_loss.item(), entropy_loss.item(), loss.item())
                 if utils._globals['swanlab']:
                     swanlab.log({'loss': loss.item()})
                     swanlab.log({'policy_loss': policy_loss.item()})
@@ -250,7 +250,7 @@ class PPO:
                     break
             # print('2', time.time() - st)
         
-        print('done policy optim')
+        # print('done policy optim')
         
         if hasattr(self, 'policy_scheduler'):        
             self.policy_scheduler.step(loss)
@@ -288,22 +288,22 @@ class PPO:
                 values_pred_all = self.value_model(states)
                 mse = (values - values_pred_all).pow(2).mul(0.5).mean()
                 if mse.item() > self.value_stopping_mse:
-                    print('wow, we are done here (value)')
+                    # print('wow, we are done here (value)')
                     break
         
 
         if hasattr(self, 'value_scheduler'):
             self.value_scheduler.step(value_loss)
 
-        print('nsteps', nsteps)
-        print('neps', new_eps)
+        # print('nsteps', nsteps)
+        # print('neps', new_eps)
         # return nsteps
 
     def train(self, n_eps: int, roll_ct: int=20, mean_bound:float=0, std_tol: float=0.1, dev_envs: list[Environment]=[], start_ep=0, plot_fn=None):
         
         self.n_eps = n_eps
         if plot_fn is not None:
-            print('mhmm?', flush=True)
+            # print('mhmm?', flush=True)
             plotter = Plotter(10, plot_fn)
         else:
             plotter = None
@@ -316,13 +316,13 @@ class PPO:
             # collect some rollout
             while self.episode < n_eps:
                 rd += 1
-                print('train start', flush=True)
+                # print('train start', flush=True)
                 
                 
                 self.optimize_model()
-                print(f'{self.episode=}', flush=True)
-                # plot
-                print('skipping plotting')
+                # print(f'{self.episode=}', flush=True)
+                # # plot
+                # print('skipping plotting')
 
                 if False:#rd % 5 == 0:
                     print(BLUE+'Episodes:', episode+start_ep, RESET)
@@ -341,9 +341,9 @@ class PPO:
                 if rd % 5 == 0:
                     rolling_rews = torch.tensor([res[3] for res in results[-roll_ct:]], dtype=torch.float32)
                     rolling_truncated = roll_ct-sum([res[1] for res in results[-roll_ct:]])
-                    print(BOLD_CYAN, rolling_rews.min().item(), rolling_rews.mean().item(), rolling_rews.std().item())
-                    print(BOLD_GREEN, rolling_truncated, RESET)
-                    print(palette[int((rolling_truncated/roll_ct)*(len(palette)-1) + 1e-6)], "█"*100)
+                    # print(BOLD_CYAN, rolling_rews.min().item(), rolling_rews.mean().item(), rolling_rews.std().item())
+                    # print(BOLD_GREEN, rolling_truncated, RESET)
+                    # print(palette[int((rolling_truncated/roll_ct)*(len(palette)-1) + 1e-6)], "█"*100)
                 
                 # check on the dev set
                 # if len(dev_envs) > 0:
@@ -357,15 +357,15 @@ class PPO:
                 #         break
 
         except KeyboardInterrupt:
-            print(BOLD_RED)
-            print('Training interrupted by user.')
-            print(RESET)
-            print(f'Done training in {self.episode} episodes.')
-            print(f'{len(results)=}')
+            # print(BOLD_RED)
+            # print('Training interrupted by user.')
+            # print(RESET)
+            # print(f'Done training in {self.episode} episodes.')
+            # print(f'{len(results)=}')
             return results, self.episode+start_ep
 
-        print(RESET)
-        print(f'Done training in {self.episode} episodes.')
+        # print(RESET)
+        # print(f'Done training in {self.episode} episodes.')
         return results, self.episode+start_ep
 
     def evaluate(self, eval_env: Environment, n_eps=1):
@@ -374,7 +374,7 @@ class PPO:
         for _ in range(n_eps):
             rew = 0; acts = []
             s, _ = eval_env.reset()
-            print('stt', s)
+            # print('stt', s)
             a = None
             while not terminal and not truncated:
                 a = self.policy_model.select_action(s)
@@ -382,7 +382,7 @@ class PPO:
                 terminal = terminal[0]
                 truncated = truncated[0]
                 rew += r[0]; acts.append(a[0]) #### Future stats: Record the path (ie s2 or self.agent.state as well and plot fidelity vs time (steps).
-            print('ter', terminal, truncated, s, eval_env.tab2tensor(eval_env.start_state), flush=True)
+            # print('ter', terminal, truncated, s, eval_env.tab2tensor(eval_env.start_state), flush=True)
             meta, fidel = eval_env.stats()
             stats.append((rew, acts, meta[0], fidel[0]))
             terminal = truncated = False

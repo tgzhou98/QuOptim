@@ -47,7 +47,8 @@ def get_device(prefer_cuda=True):
 			torch.cuda.empty_cache()
 			return 'cuda'
 	except Exception as e:
-		print(f"CUDA test failed, falling back to CPU: {e}")
+		# print(f"CUDA test failed, falling back to CPU: {e}")
+		pass
 		
 	return 'cpu'
 
@@ -148,13 +149,13 @@ def prepare_testbench_tableau(num_exp: int, qubits: int, testfile: str, seed: in
 		fname = testfile
 		if testfile in ['', 'none']: fname = f'random-test-{qubits}q'
 		f = open(fname, 'w')
-		print(num_exp, flush=True)
+		# print(num_exp, flush=True)
 		if num_exp == -1:
 			j = 0
 			# generate all possible tableaus (iterate)
 			for tabl in stim.Tableau.iter_all(qubits, unsigned=True):
 				j +=1
-				print(j, flush=True)
+				# print(j, flush=True)
 				f.write(tableau2str(tabl)+' # randomly generated\n')
 				test_set.append(tabl)
 		else:
@@ -171,19 +172,19 @@ def prepare_testbench_tableau(num_exp: int, qubits: int, testfile: str, seed: in
 					tableau = str2tableau(state.split('#')[0].rstrip())
 					test_set.append(tableau)
 				except Exception as interrupt:
-					print(interrupt)
+					# print(interrupt)
 					raise ValueError(f'(Most probably) {i+1}th state in file is not of the right size, expected size {qubits}')
 	return test_set
 
 import inspect
-def debug():
+# def debug():
 	# print current line
-	print(f'{inspect.currentframe().f_back.f_lineno}')
+	# print(f'{inspect.currentframe().f_back.f_lineno}')
 
 flags = set()
 def print_once(msg, use):
 	if use in flags: return
-	print(msg, flush=True)
+	# print(msg, flush=True)
 	flags.add(use)
 
 # random clifford state
@@ -195,10 +196,11 @@ def make_random_tableau(nqbits: int, dist='clifford', **kwargs) -> stim.Tableau:
 		return stim.Tableau.random(nqbits)
 	elif dist.startswith('clifford-brickwork'):
 		depth = kwargs.get('depth', 5)
-		print(f'Generating random brickwork clifford state with {nqbits} qubits and depth {depth}', flush=True)
+		# print(f'Generating random brickwork clifford state with {nqbits} qubits and depth {depth}', flush=True)
 		return random_brickwork_clifford(nqbits, depth)
 	else:
-		print(f'Invalid distribution ({dist}) for random tableau generation')
+		# print(f'Invalid distribution ({dist}) for random tableau generation')
+		pass
 
 def random_brickwork_clifford(qubits, depth):
 	tab = stim.Tableau(qubits)
@@ -1114,7 +1116,7 @@ def plot_timeline_qiskit(qiskit_circuit, save_path=None, title_suffix=""):
     # Save or return base64
     if save_path:
         plt.savefig(save_path, dpi=400, bbox_inches='tight')
-        print(f"Timeline plot saved to: {save_path}")
+        # print(f"Timeline plot saved to: {save_path}")
         plt.close(fig)
         return save_path
     else:

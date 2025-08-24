@@ -37,23 +37,23 @@ os.chdir(Path(__file__).parent)
 # Save the original print function
 original_print = builtins.print
 
-# Define a new print function that always flushes
-def print(*args, **kwargs):
-    kwargs.setdefault('flush', True)
-    original_print(*args, **kwargs)
+# # Define a new print function that always flushes
+# def print(*args, **kwargs):
+#     kwargs.setdefault('flush', True)
+#     original_print(*args, **kwargs)
 
 def to_cmd_line(data, encoding:str='dict') -> list:
     s = []
     d = vars(data) if encoding == 'namespace' else data
     for k, v in d.items():
-        print(k, v, type(k), type(v), sep='\t\t')
+        # print(k, v, type(k), type(v), sep='\t\t')
         if v == '': continue
         if isinstance(v, bool):
             if v: s.append(f'--{k}')
             continue
         s.append(f'-{k}')
         s.append(str(v))
-    print(s)
+    # print(s)
     return s
 
 def parse(cmd_line_args: Union[list[str], None] = None) -> argparse.Namespace:
@@ -121,9 +121,9 @@ def parse(cmd_line_args: Union[list[str], None] = None) -> argparse.Namespace:
         args = parser.parse_args(cmd)
 
     if args.exptdate == '':
-        print('duhh')
+        # print('duhh')
         args.exptdate = datetime.now().strftime('%d-%m-%Y')
-    print(f'hi {args=}')
+    # print(f'hi {args=}')
     return args
 
 class Runner:
@@ -162,7 +162,7 @@ class Runner:
         utils._globals['gamma'] = args.gamma
         utils._globals['tau'] = args.tau
         utils._globals['num_envs'] = args.num_envs
-        print('globals:\n', utils._globals)
+        # print('globals:\n', utils._globals)
         utils.args = args
     
     @staticmethod
@@ -201,7 +201,7 @@ class Runner:
             f.write('\n')
 
     def make_expt(self):
-        print(f'{self.seed=}')
+        # print(f'{self.seed=}')
         self.exp = Experiment(self.args.a, self.training_req, n_workers=self.args.numworkers)
         if self.training_req:
             self.exp.initialize_env(self.target_state, self.args.tol, self.args.maxsteps, self.args.gateset, self.args.dist, self.seed, training_req=self.training_req, n_workers=self.args.numworkers, num_envs=utils._globals['num_envs'])
@@ -242,18 +242,18 @@ class Runner:
             )
 
     def train_agent(self):
-        print(RED + '!!checks!!')
-        print(hasattr(self.exp, 'env'))
-        print(type(self.exp.env))
+        # print(RED + '!!checks!!')
+        # print(hasattr(self.exp, 'env'))
+        # print(type(self.exp.env))
         # exit()
-        print(BLUE + '=========Training starts here=========' + RESET)
-        print(os.path.join(self.path, 'results'))
+        # print(BLUE + '=========Training starts here=========' + RESET)
+        # print(os.path.join(self.path, 'results'))
         results, self.curr_ep = self.exp.train(self.args.numeps, savepath=os.path.join(self.path, 'results'), roll_ct=self.args.terct, mean_bound=self.args.meanbd, std_tol=self.args.stdtol, start_ep=self.curr_ep)
         # self.exp.get_stats(os.path.join(self.path, 'results'), roll_ct=50)
         with open(os.path.join(self.path, 'metadata.txt'), 'w') as f: f.write(str(self.curr_ep))
         self.exp.save_model(os.path.join(self.path, 'model'))
-        print(BLUE + '=========Training ends here=========' + RESET)
-        print(GREEN+'model in', os.path.join(self.path, 'model.pkl'), RESET)
+        # print(BLUE + '=========Training ends here=========' + RESET)
+        # print(GREEN+'model in', os.path.join(self.path, 'model.pkl'), RESET)
         return results
         
     def test_agent(self, env: Environment) -> list:
@@ -266,24 +266,24 @@ class Runner:
             # print(self.exp.sample_env.get_inverted_ckt(best[0][0]))
             fid = best[0][3]
             s = "shortest ckt, fidelity: " + (GREEN if fid > 1-self.args.tol else RED) + f'{fid:.4f} ' + RESET + f'(gates = {len(best[0][0])}, basic_gates = {env.num_basic_gates(best[0][0])}\n'
-            print('best', [env.gates[a.item()] for a in best[0][0]])
+            # print('best', [env.gates[a.item()] for a in best[0][0]])
             best_fidel = best[0]
             for ckt in best[1:]:
                 if ckt[3] > best_fidel[3] + 1e-6 or (abs(ckt[3] - best_fidel[3]) < 1e-6 and len(ckt[0]) < len(best_fidel[0])): best_fidel = ckt
             s += "best ckt, fidelity:     " + (GREEN if best_fidel[3] > 1-self.args.tol else RED) + f'{best_fidel[3]:.4f} ' + RESET + f'(gates = {len(best_fidel[0])})\n'
-            print(s + '-'*250)
+            # print(s + '-'*250)
         return best
     
     def main(self) -> Union[list, None]:
         self.setup()
-        print('setup complete')
+        # print('setup complete')
         if isinstance(self.args.seed, int):
             # print('ok')
             self.args.seed = [self.args.seed]
         train_results = []
         test_results = []
         self.training_req = self.args.train or self.args.ctrain
-        print(f'{self.training_req=}')
+        # print(f'{self.training_req=}')
         if self.training_req and utils._globals['swanlab']:
             import swanlab
             swanlab.init(project='qsp-rl', name=self.path[6:], config=vars(self.args))
@@ -292,27 +292,27 @@ class Runner:
                 self.seed = seed
                 utils.set_seed(seed=self.seed)
                 self.make_expt()
-                print('env made', flush=True)
+                # print('env made', flush=True)
                 if self.training_req: 
-                    print('training required', flush=True)
+                    # print('training required', flush=True)
                     self.initialize_agent()
-                    print('agent initialized', flush=True)
+                    # print('agent initialized', flush=True)
                 self.curr_ep = 0
                 if self.args.ctrain:
                     self.exp.load_model(os.path.join(self.path, 'model'))
                     with open(os.path.join(self.path, 'metadata.txt'), 'r') as f: self.curr_ep = int(f.read())
                     train_results.append(self.train_agent())
                 elif self.args.train:
-                    print('training', flush=True)
+                    # print('training', flush=True)
                     train_results.append(self.train_agent())
-                    print('training done', flush=True)
+                    # print('training done', flush=True)
                 else:
                     utils.debug()
                     kwargs = {}
                     if self.args.dist.startswith('bounded'): 
                         kwargs['depth'] = int(self.args.dist[7:])
                         # kwargs['gateset'] = list(Environment.prepare_gatelist(self.args.qbits, self.args.dist)[-1].values()) ### CURRENTLY NOT SUPPORTED BECAUSE gatelist does not return the inverse circuits
-                        print(kwargs['gateset'])
+                        # print(kwargs['gateset'])
                     elif self.args.dist.startswith('clifford-brickwork'):
                         kwargs['depth'] = int(self.args.dist[18:])
 
@@ -328,13 +328,15 @@ class Runner:
                             mfile = os.path.join(self.path, 'model')
                             try:
                                 self.exp.load_model(mfile)
-                            except: print('failed to load model for testing')
+                            except: 
+                                pass
+                                # print('failed to load model for testing')
                         results.append(self.test_agent(env))
                     test_results.append(results)
                 utils.debug()
                 self.exp.close()
         except Exception as e:
-            print('oof', e)
+            # print('oof', e)
             import traceback
             traceback.print_tb(e.__traceback__)
             # save models
@@ -352,7 +354,7 @@ class Runner:
             with open(os.path.join(self.path, 'test-results.txt'), 'a') as f:
                 f.write(str(test_results) + '-'*50 + '\n')
             if self.training_req:
-                print([len(res) for res in train_results])
+                # print([len(res) for res in train_results])
                 return
             else:
                 return test_results
@@ -361,11 +363,11 @@ if __name__ == '__main__':
 
     float_formatter = '{:.2f}'.format
     np.set_printoptions(formatter={'complexfloat':float_formatter})
-    print('hi')
+    # print('hi')
     args = parse(None)
-    print(args)
+    # print(args)
     start_time = time.time()
-    print(start_time)
+    # print(start_time)
     pr = cProfile.Profile()
     pr.enable()
 
@@ -376,31 +378,26 @@ if __name__ == '__main__':
     sortby = 'cumulative'
     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
     ps.print_stats(1000)
-    print(s.getvalue()[:8000])
-    print('total time taken:', f'{time.time()-start_time:.0f} seconds')
-    print('testing...')
+    # print(s.getvalue()[:8000])
+    # print('total time taken:', f'{time.time()-start_time:.0f} seconds')
+    # print('testing...')
     
     # Import and run random_testbench instead of using shell command
-    try:
-        import sys
-        print(sys.executable)
-        from . import random_testbench
-        
-        # Call the test function directly with the required parameters
-        hyp_string = f'{args.qbits},{args.tol},{args.name},{args.exptdate}'
-        test_name = f'random-test-{args.qbits}q'
-        
-        random_testbench.test(
-            params=hyp_string,
-            n=50,
-            test_name=test_name,
-            seed=42,
-            dist='clifford',
-            verbose=args.v,
-            just_qiskit=0
-        )
-        
-    except ImportError as e:
-        print(f'Could not import random_testbench: {e}')
-    except Exception as e:
-        print(f'Error running random_testbench: {e}')
+
+    import sys
+    # print(sys.executable)
+    from . import random_testbench
+    
+    # Call the test function directly with the required parameters
+    hyp_string = f'{args.qbits},{args.tol},{args.name},{args.exptdate}'
+    test_name = f'random-test-{args.qbits}q'
+    
+    random_testbench.test(
+        params=hyp_string,
+        n=50,
+        test_name=test_name,
+        seed=42,
+        dist='clifford',
+        verbose=args.v,
+        just_qiskit=0
+    )

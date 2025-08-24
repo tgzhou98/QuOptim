@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.linalg import expm
 from mpl_toolkits.mplot3d import Axes3D # For Bloch sphere
 import os
-%matplotlib qt
+# %matplotlib qt
 # --- Physical constants and Pauli matrices ---
 sigmax = np.array([[0, 1], [1, 0]], dtype=complex)
 sigmay = np.array([[0, -1j], [1j, 0]], dtype=complex)
@@ -18,7 +18,7 @@ H_detuning_op = sigmaz # For applying detuning explicitly
 def load_fourier_coeffs_from_csv(filename):
     """Loads Fourier coefficients from a CSV file."""
     if not os.path.exists(filename):
-        print(f"Error: File '{filename}' not found.")
+        # print(f"Error: File '{filename}' not found.")
         return None, None
     try:
         df = pd.read_csv(filename, index_col='n') 
@@ -30,27 +30,27 @@ def load_fourier_coeffs_from_csv(filename):
             b_coeffs_loaded = df['b_coeffs'].values
         
         if a_coeffs_loaded is None:
-            print("Error: Column 'a_coeffs' not found in CSV file.")
+            # print("Error: Column 'a_coeffs' not found in CSV file.")
             return None, None
         if b_coeffs_loaded is None:
-            print("Warning: Column 'b_coeffs' not found in CSV file. Assuming b_coeffs are zero.")
+            # print("Warning: Column 'b_coeffs' not found in CSV file. Assuming b_coeffs are zero.")
             b_coeffs_loaded = np.zeros_like(a_coeffs_loaded)
 
         if len(a_coeffs_loaded) < 1 or len(b_coeffs_loaded) < 1 :
-             print("Error: Coefficient array length is insufficient.")
+            #  print("Error: Coefficient array length is insufficient.")
              return None,None
         
         if len(a_coeffs_loaded) != len(b_coeffs_loaded) and np.any(b_coeffs_loaded):
-            print(f"Warning: Length mismatch between a_coeffs (len {len(a_coeffs_loaded)}) and b_coeffs (len {len(b_coeffs_loaded)}). Truncating/padding b_coeffs to match a_coeffs.")
+            # print(f"Warning: Length mismatch between a_coeffs (len {len(a_coeffs_loaded)}) and b_coeffs (len {len(b_coeffs_loaded)}). Truncating/padding b_coeffs to match a_coeffs.")
             b_new = np.zeros_like(a_coeffs_loaded)
             min_len = min(len(a_coeffs_loaded), len(b_coeffs_loaded))
             b_new[:min_len] = b_coeffs_loaded[:min_len]
             b_coeffs_loaded = b_new
 
-        print(f"Successfully loaded Fourier coefficients from '{filename}'.")
+        # print(f"Successfully loaded Fourier coefficients from '{filename}'.")
         return a_coeffs_loaded, b_coeffs_loaded
     except Exception as e:
-        print(f"Error reading coefficients CSV file: {e}")
+        # print(f"Error reading coefficients CSV file: {e}")
         return None, None
 
 def reconstruct_phi_array(t_points_array, L_pulse, a_coeffs, b_coeffs):
@@ -104,7 +104,7 @@ def plot_bloch_sphere_comparison(bloch_hist_ideal, error_cases_data, fig_title_p
     error_cases_data: list of tuples, each tuple is (label_str, bloch_hist_error)
     """
     if len(error_cases_data) != 4:
-        print("Error: plot_bloch_sphere_comparison expects exactly 4 error cases.")
+        # print("Error: plot_bloch_sphere_comparison expects exactly 4 error cases.")
         return
 
     fig = plt.figure(figsize=(12, 12))
@@ -162,14 +162,14 @@ if __name__ == "__main__":
         time_array_evol = np.linspace(0, total_pulse_duration_L, num_evolution_steps, endpoint=False)
         dt_evol = total_pulse_duration_L / num_evolution_steps
         
-        print("\nSimulating Ideal Case...")
+        # print("\nSimulating Ideal Case...")
         final_psi_ideal, bloch_hist_ideal = simulate_evolution(
             psi_initial_state, time_array_evol, dt_evol, total_pulse_duration_L,
             a_coeffs, b_coeffs_loaded, omega_max_ideal, 0.0 # Ideal: omega_max_ideal, detuning=0
         )
         phase_ideal = np.angle(final_psi_ideal[1,0])
         fid_ideal = np.abs(final_psi_ideal[1,0])**2
-        print(f"Ideal - Final state pop in |1>: {fid_ideal:.6f}, Phase of |1>: {phase_ideal:.4f} rad")
+        # print(f"Ideal - Final state pop in |1>: {fid_ideal:.6f}, Phase of |1>: {phase_ideal:.4f} rad")
 
         # Define error cases
         error_factor = 0.05
@@ -183,7 +183,7 @@ if __name__ == "__main__":
         error_case_results_for_plot = []
 
         for case_params in error_cases_params:
-            print(f"\nSimulating Case: {case_params['label']}...")
+            # print(f"\nSimulating Case: {case_params['label']}...")
             current_omega = omega_max_ideal * case_params['omega_factor']
             current_detuning = case_params['detuning_val']
             
@@ -193,7 +193,7 @@ if __name__ == "__main__":
             )
             phase_error = np.angle(final_psi_error[1,0]) if np.abs(final_psi_error[1,0]) > 1e-3 else np.nan
             fid_error = np.abs(final_psi_error[1,0])**2
-            print(f"{case_params['label']} - Final state pop in |1>: {fid_error:.6f}, Phase of |1>: {phase_error:.4f} rad")
+            # print(f"{case_params['label']} - Final state pop in |1>: {fid_error:.6f}, Phase of |1>: {phase_error:.4f} rad")
             error_case_results_for_plot.append((case_params['label'], bloch_hist_error))
             
         plot_bloch_sphere_comparison(bloch_hist_ideal, error_case_results_for_plot)

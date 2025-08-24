@@ -86,7 +86,7 @@ async def optimize_cz_gate(
     g.Omega_max = omega_max
     g.HNplus1 = np.array([[1,0,0,0],[0,0,0,0],[0,0,2,0],[0,0,0,0]]) / g.dt
     
-    print("Initialized CZ gate GRAPE optimization with bidirectional evolution.")
+    # print("Initialized CZ gate GRAPE optimization with bidirectional evolution.")
     
     # Track optimization progress
     progress_text = []

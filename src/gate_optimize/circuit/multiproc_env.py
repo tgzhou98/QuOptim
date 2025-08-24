@@ -14,7 +14,7 @@ class MultiprocessEnv:
         self.n_workers = n_workers
         self.policy_model = None
         self.value_model = None
-        print('HERE', __name__)
+        # print('HERE', __name__)
         if __name__ == 'multiproc_env': # important
             mp.set_start_method('spawn')
             self.event = mp.Event()
@@ -37,13 +37,13 @@ class MultiprocessEnv:
                 },
             ) for i in range(self.n_workers)]
             self.dones = {i:False for i in range(self.n_workers)}
-            print(self.n_workers, "workers created")
+            # print(self.n_workers, "workers created")
             # [w.start() for w in self.workers]
             for w in self.workers:
-                print("starting worker")
+                # print("starting worker")
                 w.start()
-                print("worker started", flush=True)
-            print('ok4', flush=True)
+                # print("worker started", flush=True)
+            # print('ok4', flush=True)
             self.reset()
     
     @staticmethod
@@ -53,19 +53,20 @@ class MultiprocessEnv:
             try:
                 if torch.cuda.is_available():
                     device_count = torch.cuda.device_count()
-                    print(device_count, "CUDA devices available", flush=True)
+                    # print(device_count, "CUDA devices available", flush=True)
                     # torch.cuda.set_device(1 + rank%(device_count-1))
                     torch.cuda.set_device(rank % device_count) # if only one device available
                     current_device = torch.cuda.current_device()
-                    print(f'Thread {rank} STARTED on CUDA device {current_device}', flush=True)
+                    # print(f'Thread {rank} STARTED on CUDA device {current_device}', flush=True)
                 else:
-                    print(f'Thread {rank} CUDA not available, falling back to CPU', flush=True)
+                    # print(f'Thread {rank} CUDA not available, falling back to CPU', flush=True)
                     device = 'cpu'
             except Exception as e:
-                print(f'Thread {rank} CUDA setup failed ({e}), falling back to CPU', flush=True)
+                # print(f'Thread {rank} CUDA setup failed ({e}), falling back to CPU', flush=True)
                 device = 'cpu'
         else:
-            print(f'Thread {rank} STARTED on CPU', flush=True)
+            pass
+            # print(f'Thread {rank} STARTED on CPU', flush=True)
         
         while True:
             event.wait()

@@ -20,13 +20,6 @@ from .error_analysis import (
 from .circuit_visualization import plot_stim_circuit
 
 
-from importlib import resources
-import sys
-import gate_optimize
-project_root = resources.files(gate_optimize).parent
-src_path = project_root / "src"
-if str(src_path) not in sys.path:
-    sys.path.insert(0, str(src_path))
 
 __all__ = [
     'QECCodeBuilder', 

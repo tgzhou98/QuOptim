@@ -23,7 +23,7 @@ def gen_all(params: str, n, test_name, seed, dist, verbose=0):
         with open(params_path) as f:
             args: Namespace = eval(f.read())
     else:
-        print('exists')
+        # print('exists')
         params_path = os.path.join(params_path, 'hyper-params.json')
         with open(params_path) as f:
             args = json.load(f)
@@ -43,7 +43,7 @@ def gen_all(params: str, n, test_name, seed, dist, verbose=0):
     runner = Runner(args, verbose)
     results = runner.main()
     savepath = os.path.join(runner.path, 'testbench-results')
-    print(f'{savepath=}')
+    # print(f'{savepath=}')
     collect_stats(args.qbits, results[0], savepath, args.tol)
     # put back the original args
     args = old_args
@@ -53,16 +53,16 @@ def gen_all(params: str, n, test_name, seed, dist, verbose=0):
 def test(params: str, n, test_name, seed, dist, verbose=0, just_qiskit=0):
     q, tol, name, date = params.split(',')
     params_path = Runner.make_path(q, tol, name, date)
-    print(f'{params_path=}')
+    # print(f'{params_path=}')
     if not just_qiskit:
         exists_json = os.path.exists(os.path.join(params_path, 'hyper-params.json'))
-        print(f'{exists_json=}')
+        # print(f'{exists_json=}')
         if not exists_json:
             params_path = os.path.join(params_path, 'hyper-params.txt')
             with open(params_path) as f:
                 args: Namespace = eval(f.read())
         else:
-            print('exists')
+            # print('exists')
             params_path = os.path.join(params_path, 'hyper-params.json')
             with open(params_path) as f:
                 args = json.load(f)
@@ -79,12 +79,12 @@ def test(params: str, n, test_name, seed, dist, verbose=0, just_qiskit=0):
         args.seed = seed
         args.fromjson = ''
         args.exptdate = date
-        print(f'{args=}')
+        # print(f'{args=}')
         runner = Runner(args, verbose)
         # exit()
         results = runner.main()
         savepath = os.path.join(runner.path, 'testbench-results')
-        print('yeah from test')
+        # print('yeah from test')
 
         # put back old args
         args = old_args
@@ -121,24 +121,24 @@ def test(params: str, n, test_name, seed, dist, verbose=0, just_qiskit=0):
             # print('gates =', sum(acts[-1].values()))
             fidels.append(1.0)
     # print(acts)
-    print('A-G')
-    print('average number of basic gates: ', sum(acts_ag)/len(acts_ag))
-    print('median number of basic gates: ', sorted(acts_ag)[len(acts_ag)//2])
-    print('min basic gates', min(acts_ag))
-    print('max basic gates', max(acts_ag))
-    print('acts', acts_ag)
-    print('B-M')
-    print('average number of basic gates: ', sum(acts_bm)/len(acts_bm))
-    print('median number of basic gates: ', sorted(acts_bm)[len(acts_bm)//2])
-    print('min basic gates', min(acts_bm))
-    print('max basic gates', max(acts_bm))
-    print('acts', acts_bm)
-    print('B-M-Greedy')
-    print('average number of basic gates: ', sum(acts_bm_greedy)/len(acts_bm_greedy))
-    print('median number of basic gates: ', sorted(acts_bm_greedy)[len(acts_bm_greedy)//2])
-    print('min basic gates', min(acts_bm_greedy))
-    print('max basic gates', max(acts_bm_greedy))
-    print('acts', acts_bm_greedy)
+    # print('A-G')
+    # print('average number of basic gates: ', sum(acts_ag)/len(acts_ag))
+    # print('median number of basic gates: ', sorted(acts_ag)[len(acts_ag)//2])
+    # print('min basic gates', min(acts_ag))
+    # print('max basic gates', max(acts_ag))
+    # print('acts', acts_ag)
+    # print('B-M')
+    # print('average number of basic gates: ', sum(acts_bm)/len(acts_bm))
+    # print('median number of basic gates: ', sorted(acts_bm)[len(acts_bm)//2])
+    # print('min basic gates', min(acts_bm))
+    # print('max basic gates', max(acts_bm))
+    # print('acts', acts_bm)
+    # print('B-M-Greedy')
+    # print('average number of basic gates: ', sum(acts_bm_greedy)/len(acts_bm_greedy))
+    # print('median number of basic gates: ', sorted(acts_bm_greedy)[len(acts_bm_greedy)//2])
+    # print('min basic gates', min(acts_bm_greedy))
+    # print('max basic gates', max(acts_bm_greedy))
+    # print('acts', acts_bm_greedy)
 
     savepath = Runner.make_path(q, tol, name, date)
     plot_actions_and_fidels(acts_ag, fidels, os.path.join(savepath, 'testbench-results-ag'))
@@ -156,9 +156,9 @@ def print_entanglement_entropy(qbits: int, gateset: list[str], results: list):
     inv_ckts = [ckt.inverse() for ckt in ckts]
     ent_entrs = []
     for res in results:
-        print(res)
+        # print(res)
         acts = res[0][0]
-        print(acts)
+        # print(acts)
         tab = stim.Tableau(qbits)
         ent_entr = []
         for a in reversed(acts):
@@ -166,7 +166,7 @@ def print_entanglement_entropy(qbits: int, gateset: list[str], results: list):
             entr = utils.ent_entr(tab)
             ent_entr.append(entr)
         ent_entrs.append(ent_entr)
-    print(ent_entrs)
+    # print(ent_entrs)
     return ent_entrs
 
 def print_circuits(qbits: int, gateset: list[str], results: list, generators: list):
@@ -176,15 +176,15 @@ def print_circuits(qbits: int, gateset: list[str], results: list, generators: li
     qc_hsdgh.s(0)
     qc_hsdgh.h(0)
     qc_hsdgh = qc_hsdgh.to_gate(label='HSH')
-    print(gates)
+    # print(gates)
     for res, gens in zip(results, generators):
-        print(res)
+        # print(res)
         acts = res[0][0]
-        print(acts)
-        print('gens', gens)
+        # print(acts)
+        # print('gens', gens)
         qc = QuantumCircuit(qbits)
         for i in reversed(acts):
-            print('gates', gates[i], targets[i])
+            # print('gates', gates[i], targets[i])
             if gates[i].split('(')[0] == 'h':
                 qc.h(targets[i])
             elif gates[i].split('(')[0] == 'cnot':
@@ -201,18 +201,18 @@ def print_circuits(qbits: int, gateset: list[str], results: list, generators: li
                 qc.y(targets[i])
             elif gates[i].split('(')[0] == 'tdg':
                 qc.t(targets[i])
-        print('rl')
-        print(qc)
-        print('qiskit')
+        # print('rl')
+        # print(qc)
+        # print('qiskit')
         qc_qiskit = bravyi_circuit(gens)
-        print(qc_qiskit)
+        # print(qc_qiskit)
         # check if the state is same as final state or not
         sv_rl = qi.Statevector.from_instruction(qc).data
         sv_qiskit = qi.Statevector.from_instruction(qc_qiskit).data
         # print('fidel', qi.state_fidelity(sv_rl, sv_qiskit))
         fid = qi.state_fidelity(sv_rl, sv_qiskit)
-        if not abs(1 - fid) < 1e-6:
-            print('prepfailed', fid)
+        # if not abs(1 - fid) < 1e-6:
+        #     print('prepfailed', fid)
 
 def collect_stats(qbits: int, gateset: list[str], results: list, savepath: str, fidel_tol):
     # results: list of (list of (acts, rew, final_state, fidel) over runs) over test cases
@@ -234,9 +234,9 @@ def collect_stats(qbits: int, gateset: list[str], results: list, savepath: str, 
     
     # compute average over runs
     for res in results:
-        print('helloworld', res, len(res), flush=True)
-        for r in res:
-            print('actsz', len(r[0]), r[1], r[2], r[3], flush=True)
+        # print('helloworld', res, len(res), flush=True)
+        # for r in res:
+        #     print('actsz', len(r[0]), r[1], r[2], r[3], flush=True)
         # avg_acts.append(min([len(r[0]) for r in res]))
         avg_acts.append(min([num_basic_gates(r[0]) for r in res]))
         avg_rew.append(max([r[1] for r in res]))
@@ -252,14 +252,14 @@ def collect_stats(qbits: int, gateset: list[str], results: list, savepath: str, 
         best_fidel = res[best_fidel_idx][3]
         successes_best += (1 if best_fidel >= 1 - fidel_tol else 0)
         # assert shortest_idx == best_fidel_idx == 0 # for now
-    print('average number of basic gates: ', sum(avg_acts)/len(avg_acts))
-    print('median number of basic gates: ', sorted(avg_acts)[len(avg_acts)//2])
-    print('min basic gates', min(avg_acts))
-    print('max basic gates', max(avg_acts))
-    print('acts', avg_acts)
-    print('avg reward', sum(avg_rew)/len(avg_rew))
-    print('shortest gate success rate:', f'{successes_shortest}/{len(results)}')
-    print('best fidelity success rate:', f'{successes_best}/{len(results)}')
+    # print('average number of basic gates: ', sum(avg_acts)/len(avg_acts))
+    # print('median number of basic gates: ', sorted(avg_acts)[len(avg_acts)//2])
+    # print('min basic gates', min(avg_acts))
+    # print('max basic gates', max(avg_acts))
+    # print('acts', avg_acts)
+    # print('avg reward', sum(avg_rew)/len(avg_rew))
+    # print('shortest gate success rate:', f'{successes_shortest}/{len(results)}')
+    # print('best fidelity success rate:', f'{successes_best}/{len(results)}')
 
     # print the various quantities to a file
     with open(savepath + '.txt', 'w') as f:
@@ -298,7 +298,7 @@ def plot_actions_and_fidels(acts, fidels, savepath):
     plt.savefig(savepath + '-fidel.png')
     plt.clf()
 if __name__ == '__main__':
-    print('crazy stuff')
+    # print('crazy stuff')
     parser = ArgumentParser()
     parser.add_argument('-n', type=int, default=10)
     parser.add_argument('-seed', type=int, default=42)

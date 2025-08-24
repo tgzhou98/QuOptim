@@ -49,9 +49,9 @@ def simulate_circuit_fidelity(qiskit_circuit, error_model='physical', num_shots=
     transpiled_noisy = transpile(ideal_circuit, noisy_simulator)  # Use same base circuit
     
     # Debug: Check if circuits are different after transpilation
-    print(f"Original circuit gates: {len(ideal_circuit.data)}")
-    print(f"Transpiled ideal gates: {len(transpiled_ideal.data)}")
-    print(f"Transpiled noisy gates: {len(transpiled_noisy.data)}")
+    # print(f"Original circuit gates: {len(ideal_circuit.data)}")
+    # print(f"Transpiled ideal gates: {len(transpiled_ideal.data)}")
+    # print(f"Transpiled noisy gates: {len(transpiled_noisy.data)}")
     
     # Simulate ideal circuit
     transpiled_ideal.save_statevector()  # Save statevector for retrieval
@@ -293,18 +293,18 @@ def example_usage():
     # Evaluate with different error models
     for model in ['physical', 'depolarizing', 'thermal']:
         result = simulate_circuit_fidelity(qc, error_model=model)
-        print(f"\n{model.upper()} Error Model:")
-        print(f"  Fidelity: {result['fidelity']:.6f}")
-        print(f"  Error Rate: {result['error_rate']:.6f}")
-        print(f"  Total Gates: {result['total_gates']}")
-        print(f"  Circuit Depth: {result['circuit_depth']}")
+        # print(f"\n{model.upper()} Error Model:")
+        # print(f"  Fidelity: {result['fidelity']:.6f}")
+        # print(f"  Error Rate: {result['error_rate']:.6f}")
+        # print(f"  Total Gates: {result['total_gates']}")
+        # print(f"  Circuit Depth: {result['circuit_depth']}")
         
-        if 'gate_errors' in result:
-            print("  Gate-specific errors:")
-            for gate, error_info in result['gate_errors'].items():
-                if isinstance(error_info, dict) and 'count' in error_info:
-                    print(f"    {gate}: {error_info['count']} gates, "
-                          f"{error_info.get('error_rate_per_gate', 0):.6f} error rate")
+        # if 'gate_errors' in result:
+            # print("  Gate-specific errors:")
+            # for gate, error_info in result['gate_errors'].items():
+                # if isinstance(error_info, dict) and 'count' in error_info:
+                    # print(f"    {gate}: {error_info['count']} gates, "
+                        #   f"{error_info.get('error_rate_per_gate', 0):.6f} error rate")
 
 
 def _create_custom_noise_model(single_q_error_rate, two_q_error_rate, measurement_error_rate):

@@ -48,7 +48,7 @@ class TabEmbed(nn.Module):
 			loss = criterion(distances, fidels)
 			loss.backward()
 			optimizer.step()
-			print(f'epoch {epoch+1}/{epochs}, loss={loss.item()}')
+			# print(f'epoch {epoch+1}/{epochs}, loss={loss.item()}')
 
 
 class Environment:
@@ -60,9 +60,9 @@ class Environment:
 		self.seed = seed
 		self.num_envs = num_envs
 		if self.seed:
-			print(self.seed, "haa", flush=True)
+			# print(self.seed, "haa", flush=True)
 			if isinstance(self.seed, int): self.seed = [self.seed + i for i in range(self.num_envs)]
-			print(self.seed, flush=True)
+			# print(self.seed, flush=True)
 			self.rng = [np.random.default_rng(sd) for sd in self.seed]
 		
 		self.gateset = gateset
@@ -88,7 +88,7 @@ class Environment:
 		self.device = 'cpu'
 		self.way = utils._globals['rewardtype']
 
-		print(f'{self.way=}, {self.dist=}', flush=True)
+		# print(f'{self.way=}, {self.dist=}', flush=True)
 
 		self.prev_action = -1
 		self.prev_state = None
@@ -110,7 +110,7 @@ class Environment:
 
 		self.use_embedding = False
 		if self.use_embedding:
-			print('training embedding')
+			# print('training embedding')
 			self.tabembed = TabEmbed(self.qubits, self.state_size-1)
 			self.tabembed.train(utils.make_random_tableau, self._tab2tensor, batch_size=64, epochs=20)
 		if self.use_embedding:
@@ -222,11 +222,11 @@ class Environment:
 	def step(self, action: list[int]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, Any]:
 		self.steps_left -= 1
 		if utils._globals['debug']:
-			print(BLUE + 'current:', self.state, CYAN, action)
+			# print(BLUE + 'current:', self.state, CYAN, action)
 			old_fid = self.curr_fidelity()
 		self.prev_action = action
 		self.prev_state = copy.deepcopy(self.state)
-		print('action!', action, flush=True)
+		# print('action!', action, flush=True)
 		self.take_action(action)
 
 		newfid = self.curr_fidelity()
@@ -257,8 +257,8 @@ class Environment:
 		self.meta_actions_of_resetted = self.meta_actions[self.to_reset]
 		self._reset(self.to_reset)
 
-		if utils._globals['debug'] and self.way != 8:
-			print(RED, f'stats: {old_fid:.2f}->{newfid:.2f} ({self.maxfid:.2f}, {terminal}, {truncated}, {rew}, {self.meta_actions})')
+		# if utils._globals['debug'] and self.way != 8:
+		# 	print(RED, f'stats: {old_fid:.2f}->{newfid:.2f} ({self.maxfid:.2f}, {terminal}, {truncated}, {rew}, {self.meta_actions})')
 		new_states = self.state_to_tensor()
 		if self.way in [8, 9, 10, 11]:
 			rew_tableau = (0.99 * l1_prev_step - self.l1_dists_prev_step)
@@ -283,8 +283,8 @@ class Environment:
 			# if utils._globals['swanlab'] and swanlab.run is not None:
 			#     swanlab.log({'reward_min': np.min(rew), 'reward_max': np.max(rew), 'reward_mean': np.mean(rew)})
 			# print('reward', rew, l1_prev_step, self.l1_dists_prev_step, flush=True)
-			if np.allclose(rew, 0):
-				print('ZERO REWARD', self.state, self.prev_state, flush=True, sep='\n')
+			# if np.allclose(rew, 0):
+			# 	print('ZERO REWARD', self.state, self.prev_state, flush=True, sep='\n')
 		return new_states, rew, terminal, truncated, self.info
 	
 	# sort of hack to record the episode number (roughly)
@@ -445,9 +445,9 @@ class Environment:
 			
 		self.maxfid[idxs] = self.curr_fidelity(idxs)
 	
-	def _state_info(self):
-		print(self.state_to_tensor(), self.state_to_tensor(self.target_state), sep='\n---\n')
-		print('final fidelity', self.curr_fidelity())
+	# def _state_info(self):
+		# print(self.state_to_tensor(), self.state_to_tensor(self.target_state), sep='\n---\n')
+		# print('final fidelity', self.curr_fidelity())
 
 	def num_basic_gates(self, actions: list[int]) -> int:
 		return sum(self.basic_gate_count[a] for a in actions)

@@ -181,7 +181,8 @@ class MainWindow(QMainWindow):
                 
                 self.image_layout.addWidget(image_label)
             except Exception as e:
-                print(f"Error displaying image: {e}")
+                # print(f"Error displaying image: {e}")
+                pass
         
         self.update_image_sizes(self.zoom_slider.value())
         
